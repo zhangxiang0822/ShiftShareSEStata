@@ -1,2 +1,2 @@
 # BartikSEStata
-Confidence intervals in shift-share designs (also called Bartik (1991) designs) using procedures from Adão, Kolesár, and Morales (2018).
+Confidence intervals in shift-share designs, also called [Bartik 1991](https://research.upjohn.org/up_press/77/) designs using procedures from [Adão, Kolesár, and Morales (2018)](https://238d1682-a-62cb3a1a-s-sites.googlegroups.com/site/edumoralescasado/files/shift_share.pdf?attachauth=ANoY7cpWB31x1BSvZeQdp2mN0Tn-wAJ8OSmnf8mUBiB9TR4WOCl6d5pPr4e7TPP5ccwHfE7AwbUWuo4Kup3rrfWOpPtaiTDSwiHyYEkVTgUJM5NwKJVxQ4PBX2oeyKUbhgobMRC3Nto0ndlrpy85GH_xZKSMb63KiP6rXAIKL1BfmT6OE6joBpVjXQEABcBAbBKfWwSNBsc6lh33sMKCS8nQurSifClRxaqCPbDSM1idLcegm1FT3dg%3D&attredirects=0).
