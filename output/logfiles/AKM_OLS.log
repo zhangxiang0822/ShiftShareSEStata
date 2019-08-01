@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  D:\Dropbox\RA_Princeton\RA_Morales\BartikSEStata\output/logfiles/AKM_OLS.log
   log type:  text
- opened on:   1 Aug 2019, 12:08:23
+ opened on:   1 Aug 2019, 15:08:55
 
 . 
 . prog main
@@ -18,84 +18,10 @@
 . prog AKM_nocluster
   1.         local control_var "t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wsc
 > en l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource"
-  2. 
-.         *** (1) OLS regression
-.         ** Full sample
-.         reg d_sh_empl d_tradeotch_pw_lag `control_var' [aw = weight]
-  3.         reg d_sh_empl d_tradeotch_pw_lag `control_var' [aw = weight], r
-  4.         reg d_sh_empl d_tradeotch_pw_lag `control_var' [aw = weight], cluster(state)
-  5. 
-.         * (AKM)
-.         set matsize 10000
-  6. 
-.         foreach var in `control_var' d_sh_empl d_tradeotch_pw_lag constant {
-  7.                 replace `var' = `var' * sqrt(weight)
-  8.         }
-  9.         
-.         forvalues i = 1(1)792 {
- 10.                 replace var`i' = var`i' * sqrt(weight)
- 11.         }
- 12.         
-.         * Drop colinear share variables
-.         _rmcoll var*, force
- 13.         local share_emp_vars `r(varlist)'
- 14.         keep `r(varlist)'  d_sh_empl d_tradeotch_pw_lag `control_var' constant czone year weight
- 15.         
-.         ** Generate Matrix of Regressors, shares, and outcome variable
-.         mkmat d_tradeotch_pw_lag `control_var' constant, matrix(Mn)   //Matrix of regressors
- 16.         mkmat var*, matrix(ln)                                                           //Matrix of Shares
- 17.         mkmat d_sh_empl, matrix(tildeYn)                                         //Dependent Variable  
- 18.         
-.         ** OLS Estimates
-.         mat hat_theta = inv(Mn'*Mn)*(Mn' * tildeYn)
- 19.         mat e = tildeYn - Mn * hat_theta
- 20.         mat hat_beta = hat_theta[1, .]
- 21.         local coef = hat_theta[1,1]
- 22.     
-.         ** Auxiliary variables
-.         mkmat `control_var' constant, matrix(tildeZn)
- 23.         mkmat d_tradeotch_pw_lag, matrix(tildeXn)
- 24.         local dim = rowsof(tildeXn)
- 25.         
-.         mat I_mat = I(`dim')
- 26.         mat Ydd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeYn
- 27.         mat Xdd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeXn
- 28.         mat Xddd = inv(ln'*ln) * (ln' * Xdd)
- 29.         
-.         ** Compute SE
-.         mat R_raw = (e' * ln)'
- 30.         svmat R_raw, names(R_raw)
- 31.         svmat Xddd, names(Xddd)
- 32.         drop if mi(R_raw)
- 33.         
-.         gen R_raw_sq = R_raw^2
- 34.         gen Xddd_sq = Xddd^2
- 35. 
-.         mkmat R_raw_sq, matrix(R_sq)
- 36.         mkmat Xddd_sq, matrix(Xddd_sq)
- 37.         
-.         mat LambdaAKM = R_sq' * Xddd_sq
- 38. 
-.         mat variance = inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
- 39.         local SE = sqrt(variance[1,1])
- 40.         display "The Standard Error is: " %5.4f `SE'
- 41.         
-.         local critical_value = invnormal(1-0.05/2)
- 42.         local CI_low = `coef' - `critical_value' * `SE'
- 43.         local CI_upp = `coef' + `critical_value' * `SE'
- 44.         display "The Confidence Interval is: [" %5.4f `CI_low' "," %5.4f `CI_upp' "]"
- 45. end
-
-. 
-. 
-. prog AKM0_nocluster
-  1.         local control_var "t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wsc
-> en l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource"
-  2. 
-.         * (AKM0)
+  2.         
 .         set matsize 10000
   3. 
-.         foreach var in `control_var' d_sh_empl d_tradeotch_pw_lag constant {
+.         foreach var in `control_var' d_sh_empl d_tradeotch_pw_lag d_tradeusch_pw constant {
   4.                 replace `var' = `var' * sqrt(weight)
   5.         }
   6.         
@@ -106,106 +32,195 @@
 .         * Drop colinear share variables
 .         _rmcoll var*, force
  10.         local share_emp_vars `r(varlist)'
- 11.         keep `r(varlist)'  d_sh_empl d_tradeotch_pw_lag `control_var' constant czone year weight
+ 11.         keep `r(varlist)'  d_sh_empl d_tradeotch_pw_lag d_tradeusch_pw `control_var' constant czone year weight
  12.         
+.         reg d_tradeusch_pw d_tradeotch_pw_lag `control_var' constant, noconstant
+ 13.         ivregress 2sls d_sh_empl `control_var' constant (d_tradeusch_pw = d_tradeotch_pw_lag), noconstant
+ 14.         
 .         ** Generate Matrix of Regressors, shares, and outcome variable
-.         mkmat d_tradeotch_pw_lag `control_var' constant, matrix(Mn)   //Matrix of regressors
- 13.         mkmat var*, matrix(ln)                                                           //Matrix of Shares
- 14.         mkmat d_sh_empl, matrix(tildeYn)                                         //Dependent Variable  
- 15.         
+.         mkmat d_tradeotch_pw_lag `control_var' constant, matrix(Mn)   //Matrix of IVs
+ 15.         mkmat d_tradeusch_pw `control_var' constant, matrix(Gn)   //Matrix of regressors
+ 16.         mkmat var*, matrix(ln)                                                           //Matrix of Shares
+ 17.         mkmat d_sh_empl, matrix(tildeYn)                                         //Dependent Variable  
+ 18. 
 .         ** OLS Estimates
-.         mat hat_theta = inv(Mn'*Mn)*(Mn' * tildeYn)
- 16.         mat e = tildeYn - Mn * hat_theta
- 17.         mat hat_beta = hat_theta[1, .]
- 18.         local coef = hat_theta[1,1]
- 19.     
+.         mat PM = Mn * inv(Mn' * Mn) * Mn'
+ 19.         mat hat_theta = inv(Gn'*PM*Gn)*(Gn' * PM * tildeYn)
+ 20.         mat e = tildeYn - Gn * hat_theta
+ 21.         local hat_beta = hat_theta[1, 1]
+ 22.     
 .         ** Auxiliary variables
 .         mkmat `control_var' constant, matrix(tildeZn)
- 20.         mkmat d_tradeotch_pw_lag, matrix(tildeXn)
- 21.         local dim = rowsof(tildeXn)
- 22.         
-.         mat I_mat = I(`dim')
- 23.         mat Ydd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeYn
- 24.         mat Xdd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeXn
- 25.         mat Xddd = inv(ln'*ln) * (ln' * Xdd)
+ 23.         mkmat d_tradeotch_pw_lag, matrix(tildeXn)
+ 24.         mkmat d_tradeusch_pw, matrix(tildeGn)
+ 25.         local dim = rowsof(tildeXn)
  26.         
+.         mat I_mat = I(`dim')
+ 27.         mat Ydd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeYn
+ 28.         mat Xdd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeXn
+ 29.         mat Gdd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeGn
+ 30.         mat Xddd = inv(ln'*ln) * (ln' * Xdd)
+ 31.         
+.         ** First stage coefficient
+.         mat hat_thetaFS = inv(Mn'*Mn) * (Mn'*Gdd)
+ 32.         local hatpi = hat_thetaFS[1,1]
+ 33. 
+.         ** Compute SE
+.         mat R_raw = (e' * ln)'
+ 34.         svmat R_raw, names(R_raw)
+ 35.         svmat Xddd, names(Xddd)
+ 36.         drop if mi(R_raw)
+ 37.         
+.         gen R_raw_sq = R_raw^2
+ 38.         gen Xddd_sq = Xddd^2
+ 39. 
+.         mkmat R_raw_sq, matrix(R_sq)
+ 40.         mkmat Xddd_sq, matrix(Xddd_sq)
+ 41.         
+.         mat LambdaAKM = R_sq' * Xddd_sq
+ 42. 
+.         mat variance = 1/`hatpi'^2 * inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
+ 43.         local SE = sqrt(variance[1,1])
+ 44.         display "The Coefficient is: " %5.4f `hat_beta'
+ 45.         display "The Standard Error is: " %5.4f `SE'
+ 46.         
+.         local critical_value = invnormal(1-0.05/2)
+ 47.         local CI_low = `hat_beta' - `critical_value' * `SE'
+ 48.         local CI_upp = `hat_beta' + `critical_value' * `SE'
+ 49.         display "The Confidence Interval is: [" %5.4f `CI_low' "," %5.4f `CI_upp' "]"
+ 50. end
+
+. 
+. 
+. prog AKM0_nocluster
+  1.         local control_var "t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wsc
+> en l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource"
+  2.         
+.         set matsize 10000
+  3. 
+.         foreach var in `control_var' d_sh_empl d_tradeotch_pw_lag d_tradeusch_pw constant {
+  4.                 replace `var' = `var' * sqrt(weight)
+  5.         }
+  6.         
+.         forvalues i = 1(1)792 {
+  7.                 replace var`i' = var`i' * sqrt(weight)
+  8.         }
+  9.         
+.         * Drop colinear share variables
+.         _rmcoll var*, force
+ 10.         local share_emp_vars `r(varlist)'
+ 11.         keep `r(varlist)'  d_sh_empl d_tradeotch_pw_lag d_tradeusch_pw `control_var' constant czone year weight
+ 12.         
+.         reg d_tradeusch_pw d_tradeotch_pw_lag `control_var' constant, noconstant
+ 13.         ivregress 2sls d_sh_empl `control_var' constant (d_tradeusch_pw = d_tradeotch_pw_lag), noconstant
+ 14.         
+.         ** Generate Matrix of Regressors, shares, and outcome variable
+.         mkmat d_tradeotch_pw_lag `control_var' constant, matrix(Mn)   //Matrix of IVs
+ 15.         mkmat d_tradeusch_pw `control_var' constant, matrix(Gn)   //Matrix of regressors
+ 16.         mkmat var*, matrix(ln)                                                           //Matrix of Shares
+ 17.         mkmat d_sh_empl, matrix(tildeYn)                                         //Dependent Variable  
+ 18. 
+.         ** OLS Estimates
+.         mat PM = Mn * inv(Mn' * Mn) * Mn'
+ 19.         mat hat_theta = inv(Gn'*PM*Gn)*(Gn' * PM * tildeYn)
+ 20.         mat e = tildeYn - Gn * hat_theta
+ 21.         local hat_beta = hat_theta[1, 1]
+ 22.     
+.         ** Auxiliary variables
+.         mkmat `control_var' constant, matrix(tildeZn)
+ 23.         mkmat d_tradeotch_pw_lag, matrix(tildeXn)
+ 24.         mkmat d_tradeusch_pw, matrix(tildeGn)
+ 25.         local dim = rowsof(tildeXn)
+ 26.         
+.         mat I_mat = I(`dim')
+ 27.         mat Ydd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeYn
+ 28.         mat Xdd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeXn
+ 29.         mat Gdd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeGn
+ 30.         mat Xddd = inv(ln'*ln) * (ln' * Xdd)
+ 31.         
+.         ** First stage coefficient
+.         mat hat_thetaFS = inv(Mn'*Mn) * (Mn'*Gdd)
+ 32.         local hatpi = hat_thetaFS[1,1]
+ 33.         
 .         ** Compute SE
 .         local beta0 = 0
- 27.         mat e_null = Ydd - Xdd * `beta0'
- 28.         
+ 34.         mat e_null = Ydd - Xdd * `beta0'
+ 35.         
 .         mat R_raw = (e_null' * ln)'
- 29.         svmat R_raw, names(R_raw)
- 30.         svmat Xddd, names(Xddd)
- 31.         drop if mi(R_raw)
- 32.         
-.         gen R_raw_sq = R_raw^2
- 33.         gen Xddd_sq = Xddd^2
- 34. 
-.         mkmat R_raw_sq, matrix(R_sq)
- 35.         mkmat Xddd_sq, matrix(Xddd_sq)
- 36.         
-.         mat LambdaAKM = R_sq' * Xddd_sq
- 37. 
-.     * Variance matrix
-.         mat variance = inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
- 38.         local SE_AKMnull_n = sqrt(variance[1,1])
+ 36.         svmat R_raw, names(R_raw)
+ 37.         svmat Xddd, names(Xddd)
+ 38.         drop if mi(R_raw)
  39.         
+.         gen R_raw_sq = R_raw^2
+ 40.         gen Xddd_sq = Xddd^2
+ 41. 
+.         mkmat R_raw_sq, matrix(R_sq)
+ 42.         mkmat Xddd_sq, matrix(Xddd_sq)
+ 43.         
+.         mat LambdaAKM = R_sq' * Xddd_sq
+ 44. 
+.     * Variance matrix
+.         mat variance = 1/`hatpi'^2 * inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
+ 45.         local SE_AKMnull_n = sqrt(variance[1,1])
+ 46.         display `SE_AKMnull_n'
+ 47.         
 .         * Compute Confidence INterval
 .         local critical_value = invnormal(1-0.05/2)
- 40.     local critical2 = `critical_value'^2
- 41.     mat RY = Xdd' * Ydd
- 42.     mat RX = Xdd' * Xdd
- 43.         
+ 48.     local critical2 = `critical_value'^2
+ 49.     mat RY = Xdd' * Ydd
+ 50.     mat RX = Xdd' * Gdd
+ 51.         
 .         mat lnY =  (Ydd' * ln)'
- 44.     mat lnX =  (Xdd' * ln)'
- 45.         
-.         svmat lnY, names(lnY)
- 46.         svmat lnX, names(lnX)
- 47.         gen lnY_lnX = lnY * lnX
- 48.         gen lnY_lnY = lnY1 * lnY1
- 49.         gen lnX_lnX = lnX1 * lnX1
- 50.         
-.     mkmat lnY_lnX, matrix(lnY_lnX)
- 51.     mkmat lnY_lnY, matrix(lnY_lnY)
- 52.     mkmat lnX_lnX, matrix(lnX_lnX)
+ 52.     mat lnX =  (Gdd' * ln)'
  53.         
-.     mat SXY = lnY_lnX' * Xddd_sq
- 54.     mat SXX = lnX_lnX' * Xddd_sq
- 55.     mat SYY = lnY_lnY' * Xddd_sq
- 56.         
-.         mat Q = (RX * RX)/`critical2' - SXX
- 57.     mat Delta = (RY * RX - `critical2' * SXY) * (RY * RX - `critical2' * SXY) - (RX * RX - `critical2' * SXX) * (RY * RY - `c
-> ritical2' * SYY)
+.         svmat lnY, names(lnY)
+ 54.         svmat lnX, names(lnX)
+ 55.         gen lnY_lnX = lnY * lnX
+ 56.         gen lnY_lnY = lnY1 * lnY1
+ 57.         gen lnX_lnX = lnX1 * lnX1
  58.         
+.     mkmat lnY_lnX, matrix(lnY_lnX)
+ 59.     mkmat lnY_lnY, matrix(lnY_lnY)
+ 60.     mkmat lnX_lnX, matrix(lnX_lnX)
+ 61.         
+.     mat SXY = lnY_lnX' * Xddd_sq
+ 62.     mat SXX = lnX_lnX' * Xddd_sq
+ 63.     mat SYY = lnY_lnY' * Xddd_sq
+ 64.         
+.         mat Q = (RX * RX)/`critical2' - SXX
+ 65.     mat Delta = (RY * RX - `critical2' * SXY) * (RY * RX - `critical2' * SXY) - (RX * RX - `critical2' * SXX) * (RY * RY - `c
+> ritical2' * SYY)
+ 66.         
 .         local Q = Q[1,1]
- 59.         local Delta = Delta[1,1]
- 60.         if `Q' > 0 {
- 61.                 mat CIl = ((RY * RX - `critical2' * SXY) - `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
- 62.                 mat CIu = ((RY * RX - `critical2' * SXY) + `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
- 63.                 local CI_low = CIl[1,1]
- 64.                 local CI_upp = CIu[1,1]
- 65.                 local CIType = 1
- 66.         } 
- 67.         else {
- 68.                 if `delta' > 0 {
- 69.                         mat CIl = ((RY*RX - `critical2' * SXY) + `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
- 70.                         mat CIu = ((RY*RX - `critical2' * SXY) - `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
- 71.                         local CI_low = CIl[1,1]
- 72.                         local CI_upp = CIu[1,1]
- 73.                         local CIType = 2
- 74.                 } 
- 75.                 else {
- 76.                         local CI_low = -10000000
- 77.                         local CI_upp = 10000000
- 78.                         local CIType = 3
- 79.                 }
- 80.         }    
- 81.     
+ 67.         display `Q'
+ 68.         local Delta = Delta[1,1]
+ 69.         if `Q' > 0 {
+ 70.                 mat CIl = ((RY * RX - `critical2' * SXY) - `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
+ 71.                 mat CIu = ((RY * RX - `critical2' * SXY) + `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
+ 72.                 local CI_low = CIl[1,1]
+ 73.                 local CI_upp = CIu[1,1]
+ 74.                 local CIType = 1
+ 75.         } 
+ 76.         else {
+ 77.                 if `delta' > 0 {
+ 78.                         mat CIl = ((RY*RX - `critical2' * SXY) + `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
+ 79.                         mat CIu = ((RY*RX - `critical2' * SXY) - `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
+ 80.                         local CI_low = CIl[1,1]
+ 81.                         local CI_upp = CIu[1,1]
+ 82.                         local CIType = 2
+ 83.                 } 
+ 84.                 else {
+ 85.                         local CI_low = -10000000
+ 86.                         local CI_upp = 10000000
+ 87.                         local CIType = 3
+ 88.                 }
+ 89.         }    
+ 90.     
 .         local SE = (`CI_upp' - `CI_low')/(2 * `critical_value')
- 82. 
+ 91. 
 .         display "The Standard Error is: " %5.4f `SE'
- 83.         display "The Confidence Interval is: [" %5.4f `CI_low' "," %5.4f `CI_upp' "]"
- 84. end
+ 92.         display "The Confidence Interval is: [" %5.4f `CI_low' "," %5.4f `CI_upp' "]"
+ 93. end
 
 . 
 . main
@@ -241,6 +256,7 @@ variable reg_wscen was byte now float
 (1,444 real changes made)
 (1,444 real changes made)
 (1,442 real changes made)
+(1,444 real changes made)
 variable constant was byte now float
 (1,444 real changes made)
 (514 real changes made)
@@ -1057,9 +1073,73 @@ note: var347 omitted because of collinearity
 note: var371 omitted because of collinearity
 note: var376 omitted because of collinearity
 note: var756 omitted because of collinearity
+
+      Source |       SS           df       MS      Number of obs   =     1,444
+-------------+----------------------------------   F(17, 1427)     =    352.27
+       Model |  10.6832463        17   .62842625   Prob > F        =    0.0000
+    Residual |  2.54565207     1,427  .001783919   R-squared       =    0.8076
+-------------+----------------------------------   Adj R-squared   =    0.8053
+       Total |  13.2288983     1,444  .009161287   Root MSE        =    .04224
+
+------------------------------------------------------------------------------------
+    d_tradeusch_pw |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+-------------------+----------------------------------------------------------------
+d_tradeotch_pw_lag |   .6310409   .0273252    23.09   0.000     .5774392    .6846427
+                t2 |   .6332966   .0944698     6.70   0.000      .447982    .8186113
+ l_shind_manuf_cbp |    .052753   .0059402     8.88   0.000     .0411006    .0644054
+         reg_encen |  -.1365383   .1627336    -0.84   0.402     -.455761    .1826845
+         reg_escen |    .372099   .2010945     1.85   0.064    -.0223737    .7665716
+        reg_midatl |  -.1885439   .1630093    -1.16   0.248    -.5083074    .1312196
+         reg_mount |  -.1708688   .1889746    -0.90   0.366    -.5415667    .1998291
+         reg_pacif |  -.0170044    .171655    -0.10   0.921    -.3537277    .3197188
+          reg_satl |  -.0636484   .1560558    -0.41   0.683    -.3697719     .242475
+         reg_wncen |  -.0026705   .1770938    -0.02   0.988    -.3500628    .3447217
+         reg_wscen |    .094968   .1757666     0.54   0.589    -.2498206    .4397566
+     l_sh_popedu_c |   .0085579   .0077722     1.10   0.271    -.0066882     .023804
+     l_sh_popfborn |   .0103339   .0050227     2.06   0.040     .0004812    .0201866
+       l_sh_empl_f |   .0085314   .0104739     0.81   0.415    -.0120144    .0290772
+    l_sh_routine33 |  -.0160001   .0203981    -0.78   0.433    -.0560136    .0240134
+  l_task_outsource |   .1100121   .1399653     0.79   0.432    -.1645477     .384572
+          constant |  -1.097936   .8829458    -1.24   0.214    -2.829947     .634075
+------------------------------------------------------------------------------------
+
+Instrumental variables (2SLS) regression          Number of obs   =      1,444
+                                                  Wald chi2(17)   =          .
+                                                  Prob > chi2     =          .
+                                                  R-squared       =          .
+                                                  Root MSE        =     .10432
+
+-----------------------------------------------------------------------------------
+        d_sh_empl |      Coef.   Std. Err.      z    P>|z|     [95% Conf. Interval]
+------------------+----------------------------------------------------------------
+   d_tradeusch_pw |  -.7742268   .1069532    -7.24   0.000    -.9838512   -.5646023
+               t2 |    2.75883   .2759913    10.00   0.000     2.217897    3.299763
+l_shind_manuf_cbp |   .0528923   .0179958     2.94   0.003     .0176212    .0881634
+        reg_encen |  -1.006153    .404351    -2.49   0.013    -1.798667   -.2136395
+        reg_escen |  -1.739914   .4977402    -3.50   0.000    -2.715467   -.7643611
+       reg_midatl |  -1.334585   .4043087    -3.30   0.001    -2.127016   -.5421547
+        reg_mount |  -1.164755    .468705    -2.49   0.013    -2.083399   -.2461097
+        reg_pacif |  -3.208245    .424257    -7.56   0.000    -4.039773   -2.376717
+         reg_satl |  -2.032053   .3863109    -5.26   0.000    -2.789209   -1.274898
+        reg_wncen |   .7918824   .4374547     1.81   0.070    -.0655131    1.649278
+        reg_wscen |  -1.750424   .4331686    -4.04   0.000    -2.599418   -.9014288
+    l_sh_popedu_c |   .0465649   .0192584     2.42   0.016     .0088192    .0843107
+    l_sh_popfborn |    .054594   .0125792     4.34   0.000     .0299391    .0792489
+      l_sh_empl_f |  -.2656994   .0259084   -10.26   0.000     -.316479   -.2149197
+   l_sh_routine33 |  -.2082346   .0506963    -4.11   0.000    -.3075976   -.1088717
+ l_task_outsource |  -.0919082   .3469132    -0.26   0.791    -.7718457    .5880292
+         constant |    21.3713   2.176252     9.82   0.000     17.10592    25.63667
+-----------------------------------------------------------------------------------
+Instrumented:  d_tradeusch_pw
+Instruments:   t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount
+               reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn
+               l_sh_empl_f l_sh_routine33 l_task_outsource constant
+               d_tradeotch_pw_lag
 (674 observations deleted)
-The Standard Error is: 0.2123
-The Confidence Interval is: [-1.0843,-0.2520]
+.19792403
+.45154614
+The Standard Error is: 0.2504
+The Confidence Interval is: [-1.4013,-0.4198]
 
 . 
 . cap log close

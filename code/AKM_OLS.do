@@ -13,7 +13,7 @@ prog main
 	merge 1:1 czone year using "data/ADH_emp_share.dta", assert(3) nogen
 	sort year czone
 	
-	* AKM_nocluster
+	AKM_nocluster
 	AKM0_nocluster
 end
 
