@@ -13,7 +13,7 @@ prog main
 	merge 1:1 czone year using "data/ADH_emp_share.dta", assert(3) nogen
 	sort year czone
 	
-	AKM_nocluster
+	* AKM_nocluster
 	AKM0_nocluster
 end
 
@@ -33,187 +33,176 @@ prog AKM_nocluster
 		replace `var' = `var' * sqrt(weight)
 	}
 	
-	forvalues i=2(1)771 {
+	forvalues i = 1(1)792 {
 		replace var`i' = var`i' * sqrt(weight)
 	}
-	/*
+	
 	* Drop colinear share variables
 	_rmcoll var*, force
 	local share_emp_vars `r(varlist)'
 	keep `r(varlist)'  d_sh_empl d_tradeotch_pw_lag `control_var' constant czone year weight
-*/
-	** Step (1) Regress Y_i on X_i and the controls Z_i
-	reg d_sh_empl d_tradeotch_pw_lag `control_var' constant, noconstant
-	local theta = _b[d_tradeotch_pw_lag]
-
-	predict resid, residuals
-	mkmat resid, matrix(resid_X)
-
-	** Step (2) Regress X_i on Z_i
-	qui reg d_tradeotch_pw_lag `control_var' constant, noconstant
-	predict resid2, residuals
-	mkmat resid2, matrix(resid_Xdot)
-
-	** Step (3) Compute hat(X), the regression coefficients from regressing X_dot onto W
-	qui reg resid2 var* 
-
-	matrix X_hat = J(770, 1, 0)
 	
-	forvalues i = 2(1)771{
-		loca j = `i'-1
-		matrix X_hat[`j', 1] = _b[var`i']
-	}
-	/*
-	local index = 1
-	foreach var in `share_emp_vars' {
-		capture confirm variable `var'
-		
-		if !_rc {
-		   matrix X_hat[`index', 1] = _b[`var']
-		   local index = `index' + 1
-		}
-	}
-	*/
-
-	mkmat var*, matrix(w)
-	mat R = w' * resid_X
-	mat R_sq = diag(R) * diag(R)
-
-	mat X_dot_square = resid_Xdot' * resid_Xdot
-
-	matrix C = J(770, 1, 0)
-	forvalues i = 1(1)770 {
-		mat C[`i', 1] = R[`i', 1]^2 * X_hat[`i', 1]^2
-	}
+	** Generate Matrix of Regressors, shares, and outcome variable
+	mkmat d_tradeotch_pw_lag `control_var' constant, matrix(Mn)   //Matrix of regressors
+	mkmat var*, matrix(ln)								 //Matrix of Shares
+	mkmat d_sh_empl, matrix(tildeYn) 					 //Dependent Variable  
 	
-	mat F = R_sq' * X_dot_square
-	mat G = vecdiag(F)
-	mata: st_matrix("H", rowsum(st_matrix("G")))
-	local test = sqrt(H[1,1])
-	display `test' 
+	** OLS Estimates
+	mat hat_theta = inv(Mn'*Mn)*(Mn' * tildeYn)
+	mat e = tildeYn - Mn * hat_theta
+	mat hat_beta = hat_theta[1, .]
+	local coef = hat_theta[1,1]
+    
+	** Auxiliary variables
+	mkmat `control_var' constant, matrix(tildeZn)
+	mkmat d_tradeotch_pw_lag, matrix(tildeXn)
+	local dim = rowsof(tildeXn)
 	
-	mata: st_matrix("A", colsum(st_matrix("C")))
-	mata: st_matrix("B", rowsum(st_matrix("X_dot_square")))
-	local se_beta = sqrt(A[1,1]) / B[1,1]
+	mat I_mat = I(`dim')
+	mat Ydd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeYn
+	mat Xdd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeXn
+	mat Xddd = inv(ln'*ln) * (ln' * Xdd)
+	
+	** Compute SE
+	mat R_raw = (e' * ln)'
+	svmat R_raw, names(R_raw)
+	svmat Xddd, names(Xddd)
+	drop if mi(R_raw)
+	
+	gen R_raw_sq = R_raw^2
+	gen Xddd_sq = Xddd^2
 
+	mkmat R_raw_sq, matrix(R_sq)
+	mkmat Xddd_sq, matrix(Xddd_sq)
+	
+	mat LambdaAKM = R_sq' * Xddd_sq
+
+	mat variance = inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
+	local SE = sqrt(variance[1,1])
+	display "The Standard Error is: " %5.4f `SE'
+	
 	local critical_value = invnormal(1-0.05/2)
-	local ci_low = `theta' - `critical_value' * `se_beta'
-	local ci_up  = `theta' + `critical_value' * `se_beta'
-
-	display `theta'
-	display `critical_value'
-	display `se_beta' 
-	display `ci_low' 
-	display `ci_up'
-	*/
+	local CI_low = `coef' - `critical_value' * `SE'
+	local CI_upp = `coef' + `critical_value' * `SE'
+	display "The Confidence Interval is: [" %5.4f `CI_low' "," %5.4f `CI_upp' "]"
 end
+
 
 prog AKM0_nocluster
 	local control_var "t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource"
 
-	*** (1) OLS regression
-	** Full sample
-	reg d_sh_empl d_tradeotch_pw_lag `control_var' [aw = weight]
-	reg d_sh_empl d_tradeotch_pw_lag `control_var' [aw = weight], r
-	reg d_sh_empl d_tradeotch_pw_lag `control_var' [aw = weight], cluster(state)
-
-	* (AKM)
+	* (AKM0)
 	set matsize 10000
 
 	foreach var in `control_var' d_sh_empl d_tradeotch_pw_lag constant {
 		replace `var' = `var' * sqrt(weight)
 	}
-
-	forvalues i=2(1)771 {
+	
+	forvalues i = 1(1)792 {
 		replace var`i' = var`i' * sqrt(weight)
 	}
-
+	
 	* Drop colinear share variables
 	_rmcoll var*, force
 	local share_emp_vars `r(varlist)'
 	keep `r(varlist)'  d_sh_empl d_tradeotch_pw_lag `control_var' constant czone year weight
 	
-
-	** Step (1) Regress Y_i on X_i and the controls Z_i
-	reg d_sh_empl d_tradeotch_pw_lag `control_var' constant, noconstant
-	local theta = _b[d_tradeotch_pw_lag]
-	predict resid, residual
-	mkmat resid, matrix(resid_X)
+	** Generate Matrix of Regressors, shares, and outcome variable
+	mkmat d_tradeotch_pw_lag `control_var' constant, matrix(Mn)   //Matrix of regressors
+	mkmat var*, matrix(ln)								 //Matrix of Shares
+	mkmat d_sh_empl, matrix(tildeYn) 					 //Dependent Variable  
 	
-	** Step (2) Regress Y_i - X_i beta_0 on Z_i
-	local beta = 0
-	gen restricted_dep_var = d_sh_empl - `beta' * d_tradeotch_pw_lag
+	** OLS Estimates
+	mat hat_theta = inv(Mn'*Mn)*(Mn' * tildeYn)
+	mat e = tildeYn - Mn * hat_theta
+	mat hat_beta = hat_theta[1, .]
+	local coef = hat_theta[1,1]
+    
+	** Auxiliary variables
+	mkmat `control_var' constant, matrix(tildeZn)
+	mkmat d_tradeotch_pw_lag, matrix(tildeXn)
+	local dim = rowsof(tildeXn)
 	
-	reg restricted_dep_var `control_var' constant, noconstant
-	predict resid_restricted, residual
-	mkmat resid_restricted, matrix(resid_restricted)
-
-	** Step (3) Regress X_i on Z_i
-	qui reg d_tradeotch_pw_lag `control_var' constant, noconstant
-	predict resid2, residuals
-	mkmat resid2, matrix(resid_Xdot)
+	mat I_mat = I(`dim')
+	mat Ydd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeYn
+	mat Xdd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeXn
+	mat Xddd = inv(ln'*ln) * (ln' * Xdd)
 	
-	** Step (4) Compute hat(X), the regression coefficients from regressing X_dot onto W
-	qui reg resid2 var* 
+	** Compute SE
+	local beta0 = 0
+	mat e_null = Ydd - Xdd * `beta0'
+	
+	mat R_raw = (e_null' * ln)'
+	svmat R_raw, names(R_raw)
+	svmat Xddd, names(Xddd)
+	drop if mi(R_raw)
+	
+	gen R_raw_sq = R_raw^2
+	gen Xddd_sq = Xddd^2
 
-	matrix X_hat = J(770, 1, 0)
-	local index = 1
-	foreach var in `share_emp_vars' {
-		capture confirm variable `var'
-		
-		if !_rc {
-		   matrix X_hat[`index', 1] = _b[`var']
-		   local index = `index' + 1
-		}
-	}
+	mkmat R_raw_sq, matrix(R_sq)
+	mkmat Xddd_sq, matrix(Xddd_sq)
+	
+	mat LambdaAKM = R_sq' * Xddd_sq
 
-	mkmat var*, matrix(w)
-	mat R = w' * resid_restricted
-	mat R_s = w' * resid_X
-	mat R_sq = diag(R) * diag(R)
-
-	mat X_dot_square = resid_Xdot' * resid_Xdot
-
-	matrix C = J(770, 1, 0)
-	forvalues i = 1(1)770 {
-		mat C[`i', 1] = R[`i', 1]^2 * X_hat[`i', 1]^2
-	}
-
-	mata: st_matrix("A", colsum(st_matrix("C")))
-	mata: st_matrix("B", rowsum(st_matrix("X_dot_square")))
-	local se_beta = sqrt(A[1,1]) / B[1,1]
-	local B2 = B[1,1]
-	display "se_beta = " `se_beta'
-		
+    * Variance matrix
+	mat variance = inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
+	local SE_AKMnull_n = sqrt(variance[1,1])
+	
+	* Compute Confidence INterval
 	local critical_value = invnormal(1-0.05/2)
+    local critical2 = `critical_value'^2
+    mat RY = Xdd' * Ydd
+    mat RX = Xdd' * Xdd
 	
-	mat Q_minuspart_temp = w' * resid_Xdot
-	mat Q_minuspart = J(770, 1, 0)
-	forvalues i = 1(1)770 {
-		mat Q_minuspart[`i', 1] = Q_minuspart_temp[`i', 1]^2 * X_hat[`i', 1]^2
-	}
+	mat lnY =  (Ydd' * ln)'
+    mat lnX =  (Xdd' * ln)'
 	
-	mata: st_matrix("Q_temp", colsum(st_matrix("Q_minuspart")))
-	local Q_t = Q_temp[1,1]
-
+	svmat lnY, names(lnY)
+	svmat lnX, names(lnX)
+	gen lnY_lnX = lnY * lnX
+	gen lnY_lnY = lnY1 * lnY1
+	gen lnX_lnX = lnX1 * lnX1
 	
-	local Q = `B2'^2  / `critical_value'^2 - `Q_t'
-	display "Q = " `Q'
+    mkmat lnY_lnX, matrix(lnY_lnX)
+    mkmat lnY_lnY, matrix(lnY_lnY)
+    mkmat lnX_lnX, matrix(lnX_lnX)
 	
-	mat A_temp = J(770, 1, 0)
-
-	forvalues i = 1(1)770 {
-		mat A_temp[`i', 1] = R_s[`i', 1] * X_hat[`i', 1]^2 * Q_minuspart_temp[`i', 1]
+    mat SXY = lnY_lnX' * Xddd_sq
+    mat SXX = lnX_lnX' * Xddd_sq
+    mat SYY = lnY_lnY' * Xddd_sq
+	
+	mat Q = (RX * RX)/`critical2' - SXX
+    mat Delta = (RY * RX - `critical2' * SXY) * (RY * RX - `critical2' * SXY) - (RX * RX - `critical2' * SXX) * (RY * RY - `critical2' * SYY)
+	
+	local Q = Q[1,1]
+	local Delta = Delta[1,1]
+	if `Q' > 0 {
+		mat CIl = ((RY * RX - `critical2' * SXY) - `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
+		mat CIu = ((RY * RX - `critical2' * SXY) + `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
+		local CI_low = CIl[1,1]
+		local CI_upp = CIu[1,1]
+		local CIType = 1
 	} 
-	mata: st_matrix("D", colsum(st_matrix("A_temp")))
-	local A = D[1,1]/`Q'
-	display `A'
-	
-	local ci_low = `theta' - `A' - sqrt(`A'^2 + `se_beta'^2/`Q' * `B2'^2)
-	local ci_up  = `theta' - `A' + sqrt(`A'^2 + `se_beta'^2/`Q' * `B2'^2)
-	display `theta'
-	display `ci_low'
-	display `ci_up'
+	else {
+		if `delta' > 0 {
+			mat CIl = ((RY*RX - `critical2' * SXY) + `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
+			mat CIu = ((RY*RX - `critical2' * SXY) - `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
+			local CI_low = CIl[1,1]
+			local CI_upp = CIu[1,1]
+			local CIType = 2
+		} 
+		else {
+			local CI_low = -10000000
+			local CI_upp = 10000000
+			local CIType = 3
+		}
+	}    
+    
+	local SE = (`CI_upp' - `CI_low')/(2 * `critical_value')
+
+	display "The Standard Error is: " %5.4f `SE'
+	display "The Confidence Interval is: [" %5.4f `CI_low' "," %5.4f `CI_upp' "]"
 end
 
 main
