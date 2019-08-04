@@ -9,43 +9,63 @@ cd "D:/Dropbox/RA_Princeton/RA_Morales/BartikSEStata"
 log using "output/logfiles/AKM_OLS.log", replace
 
 prog main
-	use "data/ADHdata.dta", clear
-	merge 1:1 czone year using "data/ADH_emp_share.dta", assert(3) nogen
-	sort year czone
+
+	** Compute AKM standard error and confidence interval
+	use "data/ADH_derived.dta", clear
 	
-	AKM_nocluster
-	AKM0_nocluster
+	AKM_nocluster, dependant_var(d_sh_empl) shiftshare_var(d_tradeotch_pw_lag) ///
+				   control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
+				   share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.95)
+	
+	** Compute AKM0 standard error and confidence interval
+	use "data/ADH_derived.dta", clear
+	AKM0_nocluster, dependant_var(d_sh_empl) shiftshare_var(d_tradeotch_pw_lag) ///
+				   control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
+				   share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.95)
 end
 
 prog AKM_nocluster
-	local control_var "t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource"
-
-	*** (1) OLS regression
-	** Full sample
-	reg d_sh_empl d_tradeotch_pw_lag `control_var' [aw = weight]
-	reg d_sh_empl d_tradeotch_pw_lag `control_var' [aw = weight], r
-	reg d_sh_empl d_tradeotch_pw_lag `control_var' [aw = weight], cluster(state)
-
-	* (AKM)
+	syntax, dependant_var(str) shiftshare_var(str) share_varlist(str) alpha(str) [control_varlist(str) weight_var(str)]
+	        
 	set matsize 10000
-
-	foreach var in `control_var' d_sh_empl d_tradeotch_pw_lag constant {
-		replace `var' = `var' * sqrt(weight)
+	
+	** Generate constant term
+	qui gen constant = 1
+	
+	** Reweight variables according to the weight if weights are given
+	if ("`weight_var'" ~= "") {
+		foreach var in `dependant_var' `shiftshare_var' constant  {
+			qui replace `var' = `var' * sqrt(`weight_var')
+		}
+		
+		foreach var of varlist `share_varlist' {
+			qui replace `var' = `var' * sqrt(`weight_var')
+		}
+		
+		** If there are control vars
+		if ("`control_varlist'" ~= "") {
+			foreach var in `control_varlist' {
+				qui replace `var' = `var' * sqrt(`weight_var')
+			}
+		}
 	}
 	
-	forvalues i = 1(1)792 {
-		replace var`i' = var`i' * sqrt(weight)
-	}
-	
+	/*
 	* Drop colinear share variables
-	_rmcoll var*, force
+	_rmcoll emp_share*, force
 	local share_emp_vars `r(varlist)'
-	keep `r(varlist)'  d_sh_empl d_tradeotch_pw_lag `control_var' constant czone year weight
+	keep `r(varlist)'  `dependant_var' `shiftshare_var' `control_varlist' constant czone year `weight_var'
+	*/
 	
 	** Generate Matrix of Regressors, shares, and outcome variable
-	mkmat d_tradeotch_pw_lag `control_var' constant, matrix(Mn)   //Matrix of regressors
-	mkmat var*, matrix(ln)								 //Matrix of Shares
-	mkmat d_sh_empl, matrix(tildeYn) 					 //Dependent Variable  
+	if ("`control_varlist'" ~= "") {
+		mkmat `shiftshare_var' `control_varlist' constant, matrix(Mn)   //Matrix of regressors
+	}
+	else {
+		mkmat `shiftshare_var' constant, matrix(Mn)     //Matrix of regressors
+	}
+	mkmat emp_share*, matrix(ln)						//Matrix of Shares
+	mkmat `dependant_var', matrix(tildeYn) 				//Dependent Variable  
 	
 	** OLS Estimates
 	mat hat_theta = inv(Mn'*Mn)*(Mn' * tildeYn)
@@ -54,8 +74,8 @@ prog AKM_nocluster
 	local coef = hat_theta[1,1]
     
 	** Auxiliary variables
-	mkmat `control_var' constant, matrix(tildeZn)
-	mkmat d_tradeotch_pw_lag, matrix(tildeXn)
+	mkmat `control_varlist' constant, matrix(tildeZn)
+	mkmat `shiftshare_var', matrix(tildeXn)
 	local dim = rowsof(tildeXn)
 	
 	mat I_mat = I(`dim')
@@ -67,7 +87,7 @@ prog AKM_nocluster
 	mat R_raw = (e' * ln)'
 	svmat R_raw, names(R_raw)
 	svmat Xddd, names(Xddd)
-	drop if mi(R_raw)
+	qui drop if mi(R_raw)
 	
 	gen R_raw_sq = R_raw^2
 	gen Xddd_sq = Xddd^2
@@ -78,39 +98,95 @@ prog AKM_nocluster
 	mat LambdaAKM = R_sq' * Xddd_sq
 
 	mat variance = inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
-	local SE = sqrt(variance[1,1])
-	display "The Standard Error is: " %5.4f `SE'
+	local SE_AKM = sqrt(variance[1,1])
+	local critical_value = invnormal(0.5 + `alpha'/2)
+	local CI_low = `coef' - `critical_value' * `SE_AKM'
+	local CI_upp = `coef' + `critical_value' * `SE_AKM'
 	
-	local critical_value = invnormal(1-0.05/2)
-	local CI_low = `coef' - `critical_value' * `SE'
-	local CI_upp = `coef' + `critical_value' * `SE'
-	display "The Confidence Interval is: [" %5.4f `CI_low' "," %5.4f `CI_upp' "]"
+	local tstat = `coef' / `SE_AKM'
+	local p = 2*(1 - normal(abs(`tstat')))
+	
+	if ("`weight_var'" ~= "") {
+		qui reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var']
+		
+		local SE_homo = _se[`shiftshare_var']
+		local t_homo  = _b[`shiftshare_var']/_se[`shiftshare_var']
+		local p_homo  = 2*ttail(e(df_r),abs(`t_homo'))
+		local CI_low_homo = _b[`shiftshare_var'] - `critical_value' * `SE_homo'
+		local CI_upp_homo = _b[`shiftshare_var'] + `critical_value' * `SE_homo'
+		
+		qui reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var'], r
+		local SE_r = _se[`shiftshare_var']
+		local t_r  = _b[`shiftshare_var']/_se[`shiftshare_var']
+		local p_r  = 2*ttail(e(df_r),abs(`t_homo'))
+		local CI_low_r = _b[`shiftshare_var'] - `critical_value' * `SE_r'
+		local CI_upp_r = _b[`shiftshare_var'] + `critical_value' * `SE_r'
+		
+		* reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var'], cluster(state)
+	}
+	else {
+		qui reg `dependant_var' `shiftshare_var' `control_varlist'
+		local SE_homo = _se[`shiftshare_var']
+		local t_homo  = _b[`shiftshare_var']/_se[`shiftshare_var']
+		local p_homo  = 2*ttail(e(df_r),abs(`t_homo'))
+		local CI_low_homo = _b[`shiftshare_var'] - `critical_value' * `SE_homo'
+		local CI_upp_homo = _b[`shiftshare_var'] + `critical_value' * `SE_homo'
+		
+		qui reg `dependant_var' `shiftshare_var' `control_varlist', r
+		local SE_r = _se[`shiftshare_var']
+		local t_r  = _b[`shiftshare_var']/_se[`shiftshare_var']
+		local p_r  = 2*ttail(e(df_r),abs(`t_homo'))
+		local CI_low_r = _b[`shiftshare_var'] - `critical_value' * `SE_r'
+		local CI_upp_r = _b[`shiftshare_var'] + `critical_value' * `SE_r'
+		
+		* reg `dependant_var' `shiftshare_var' `control_varlist', cluster(state)
+	}
+	
+	** Output Results
+	display "The estimated coefficient is " %5.4f `coef'
+	display "Inference"
+	display "               Std. Error   p-value   Lower CI   Upper CI"
+	display "Homoscedastic     " %5.4f `SE_homo'  "    " %5.4f `p_homo' "    " %5.4f `CI_low_homo' "    " %5.4f `CI_upp_homo' 
+	display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r' 
+	display "AKM               " %5.4f `SE_AKM'   "    " %5.4f `p' "    " %5.4f `CI_low' "    " %5.4f `CI_upp' 
 end
 
 
 prog AKM0_nocluster
-	local control_var "t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource"
-
-	* (AKM0)
+	syntax, dependant_var(str) shiftshare_var(str) share_varlist(str) alpha(str) [control_varlist(str) weight_var(str)]
+	
 	set matsize 10000
 
-	foreach var in `control_var' d_sh_empl d_tradeotch_pw_lag constant {
-		replace `var' = `var' * sqrt(weight)
-	}
+	** Generate constant term
+	qui gen constant = 1
 	
-	forvalues i = 1(1)792 {
-		replace var`i' = var`i' * sqrt(weight)
+	** Reweight variables according to the weight if weights are given
+	if ("`weight_var'" ~= "") {
+		foreach var in `dependant_var' `shiftshare_var' constant  {
+			qui replace `var' = `var' * sqrt(`weight_var')
+		}
+		
+		foreach var of varlist `share_varlist' {
+			qui replace `var' = `var' * sqrt(`weight_var')
+		}
+		
+		** If there are control vars
+		if ("`control_varlist'" ~= "") {
+			foreach var in `control_varlist' {
+				qui replace `var' = `var' * sqrt(`weight_var')
+			}
+		}
 	}
-	
-	* Drop colinear share variables
-	_rmcoll var*, force
-	local share_emp_vars `r(varlist)'
-	keep `r(varlist)'  d_sh_empl d_tradeotch_pw_lag `control_var' constant czone year weight
 	
 	** Generate Matrix of Regressors, shares, and outcome variable
-	mkmat d_tradeotch_pw_lag `control_var' constant, matrix(Mn)   //Matrix of regressors
-	mkmat var*, matrix(ln)								 //Matrix of Shares
-	mkmat d_sh_empl, matrix(tildeYn) 					 //Dependent Variable  
+	if ("`control_varlist'" ~= "") {
+		mkmat `shiftshare_var' `control_varlist' constant, matrix(Mn)   //Matrix of regressors
+	}
+	else {
+		mkmat `shiftshare_var' constant, matrix(Mn)     //Matrix of regressors
+	}
+	mkmat emp_share*, matrix(ln)						//Matrix of Shares
+	mkmat `dependant_var', matrix(tildeYn) 				//Dependent Variable  
 	
 	** OLS Estimates
 	mat hat_theta = inv(Mn'*Mn)*(Mn' * tildeYn)
@@ -119,8 +195,8 @@ prog AKM0_nocluster
 	local coef = hat_theta[1,1]
     
 	** Auxiliary variables
-	mkmat `control_var' constant, matrix(tildeZn)
-	mkmat d_tradeotch_pw_lag, matrix(tildeXn)
+	mkmat `control_varlist' constant, matrix(tildeZn)
+	mkmat `shiftshare_var', matrix(tildeXn)
 	local dim = rowsof(tildeXn)
 	
 	mat I_mat = I(`dim')
@@ -135,7 +211,7 @@ prog AKM0_nocluster
 	mat R_raw = (e_null' * ln)'
 	svmat R_raw, names(R_raw)
 	svmat Xddd, names(Xddd)
-	drop if mi(R_raw)
+	qui drop if mi(R_raw)
 	
 	gen R_raw_sq = R_raw^2
 	gen Xddd_sq = Xddd^2
@@ -199,10 +275,53 @@ prog AKM0_nocluster
 		}
 	}    
     
-	local SE = (`CI_upp' - `CI_low')/(2 * `critical_value')
-
-	display "The Standard Error is: " %5.4f `SE'
-	display "The Confidence Interval is: [" %5.4f `CI_low' "," %5.4f `CI_upp' "]"
+	local SE_AKM0 = (`CI_upp' - `CI_low')/(2 * `critical_value')
+	local tstat = (`coef' - `beta0') / `SE_AKMnull_n'
+	local p = 2*(1 - normal(abs(`tstat')))
+	
+	if ("`weight_var'" ~= "") {
+		qui reg `dependant_var' `shiftshare_var' `control_varlist' constant [aw = `weight_var'], noconstant
+		
+		local SE_homo = _se[`shiftshare_var']
+		local t_homo  = _b[`shiftshare_var']/_se[`shiftshare_var'] 
+		local p_homo  = 2*ttail(e(df_r),abs(`t_homo'))
+		local CI_low_homo = _b[`shiftshare_var'] - `critical_value' * `SE_homo'
+		local CI_upp_homo = _b[`shiftshare_var'] + `critical_value' * `SE_homo'
+		
+		qui reg `dependant_var' `shiftshare_var' `control_varlist' constant [aw = `weight_var'], r noconstant
+		local SE_r = _se[`shiftshare_var']
+		local t_r  = _b[`shiftshare_var']/_se[`shiftshare_var']
+		local p_r  = 2*ttail(e(df_r),abs(`t_homo'))
+		local CI_low_r = _b[`shiftshare_var'] - `critical_value' * `SE_r'
+		local CI_upp_r = _b[`shiftshare_var'] + `critical_value' * `SE_r'
+		
+		* reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var'], cluster(state)
+	}
+	else {
+		qui reg `dependant_var' `shiftshare_var' `control_varlist' constant, noconstant
+		local SE_homo = _se[`shiftshare_var']
+		local t_homo  = _b[`shiftshare_var']/_se[`shiftshare_var']
+		local p_homo  = 2*ttail(e(df_r),abs(`t_homo'))
+		local CI_low_homo = _b[`shiftshare_var'] - `critical_value' * `SE_homo'
+		local CI_upp_homo = _b[`shiftshare_var'] + `critical_value' * `SE_homo'
+		
+		qui reg `dependant_var' `shiftshare_var' `control_varlist'  constant, r noconstant
+		local SE_r = _se[`shiftshare_var']
+		local t_r  = _b[`shiftshare_var']/_se[`shiftshare_var']
+		local p_r  = 2*ttail(e(df_r),abs(`t_homo'))
+		local CI_low_r = _b[`shiftshare_var'] - `critical_value' * `SE_r'
+		local CI_upp_r = _b[`shiftshare_var'] + `critical_value' * `SE_r'
+		
+		* reg `dependant_var' `shiftshare_var' `control_varlist', cluster(state)
+	}
+	
+	** Output Results
+	display "The estimated coefficient is " %5.4f `coef'
+	display "Inference"
+	display "               Std. Error   p-value   Lower CI   Upper CI"
+	display "Homoscedastic     " %5.4f `SE_homo'  "    " %5.4f `p_homo' "    " %5.4f `CI_low_homo' "    " %5.4f `CI_upp_homo' 
+	display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r' 
+	display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " %5.4f `CI_low' "    " %5.4f `CI_upp' 
 end
 
 main
