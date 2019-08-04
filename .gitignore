@@ -1,6 +1,6 @@
 /temp/
-/code/preclean.do/
-/data/ADH_emp_share.dta/
-/data/ADHdata.dta/
-/code/AKM_OLS.do/
-/code/AKM_IV.do/
+/code/preclean.do
+/data/ADH_emp_share.dta
+/data/ADHdata.dta
+/code/AKM_OLS.do
+/code/AKM_IV.do
