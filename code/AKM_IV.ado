@@ -10,15 +10,15 @@ program define AKM_IV, eclass
 	if ("`weight_var'" ~= "") {
 		qui ivregress 2sls `dependant_var' `control_varlist' (`endogenous_var' = `shiftshare_iv') [aw = `weight_var']
 		local SE_homo = _se[`endogenous_var']
-		local t_homo  = _b[`endogenous_var']/_se[`endogenous_var']
-		local p_homo  = 2 * ttail(e(df_r),abs(`t_homo'))
+		local z_homo  = _b[`endogenous_var']/_se[`endogenous_var']
+		local p_homo  = normal(`z_homo')
 		local CI_low_homo = _b[`endogenous_var'] - `critical_value' * `SE_homo'
 		local CI_upp_homo = _b[`endogenous_var'] + `critical_value' * `SE_homo'
 		
 		qui ivregress 2sls `dependant_var' `control_varlist' (`endogenous_var' = `shiftshare_iv') [aw = `weight_var'], r 
 		local SE_r = _se[`endogenous_var']
-		local t_r  = _b[`endogenous_var']/_se[`endogenous_var']
-		local p_r  = 2 * ttail(e(df_r),abs(`t_r'))
+		local z_r  = _b[`endogenous_var']/_se[`endogenous_var']
+		local p_r  = normal(`z_r')
 		local CI_low_r = _b[`endogenous_var'] - `critical_value' * `SE_r'
 		local CI_upp_r = _b[`endogenous_var'] + `critical_value' * `SE_r'
 		
@@ -27,15 +27,15 @@ program define AKM_IV, eclass
 	else {
 		qui ivregress 2sls `dependant_var' (`endogenous_var' = `shiftshare_iv') [aw = `weight_var']
 		local SE_homo = _se[`endogenous_var']
-		local t_homo  = _b[`endogenous_var']/_se[`endogenous_var']
-		local p_homo  = 2 * ttail(e(df_r),abs(`t_homo'))
+		local z_homo  = _b[`endogenous_var']/_se[`endogenous_var']
+		local p_homo  = normal(`z_homo')
 		local CI_low_homo = _b[`endogenous_var'] - `critical_value' * `SE_homo'
 		local CI_upp_homo = _b[`endogenous_var'] + `critical_value' * `SE_homo'
 		
 		qui ivregress 2sls `dependant_var' (`endogenous_var' = `shiftshare_iv') [aw = `weight_var'], r 
 		local SE_r = _se[`endogenous_var']
-		local t_r  = _b[`endogenous_var']/_se[`endogenous_var']
-		local p_r  = 2 * ttail(e(df_r),abs(`t_r'))
+		local z_r  = _b[`endogenous_var']/_se[`endogenous_var']
+		local p_homo  = normal(`z_r')
 		local CI_low_r = _b[`endogenous_var'] - `critical_value' * `SE_r'
 		local CI_upp_r = _b[`endogenous_var'] + `critical_value' * `SE_r'
 		
@@ -91,14 +91,7 @@ program define AKM_IV, eclass
 	mkmat `control_varlist' constant, matrix(tildeZn)
 	mkmat `shiftshare_iv', matrix(tildeXn)
 	mkmat `endogenous_var', matrix(tildeGn)
-	local dim = rowsof(tildeXn)
-	/*
-	mat I_mat = I(`dim')
-	mat Ydd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeYn
-	mat Xdd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeXn
-	mat Gdd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeGn
-	mat Xddd = inv(ln'*ln) * (ln' * Xdd)
-	*/
+
 	mat A = tildeZn * inv(tildeZn'*tildeZn)
 	mat Xdd = tildeXn - A*(tildeZn'*tildeXn)
 	mat Ydd = tildeYn - A*(tildeZn'*tildeYn) 
@@ -218,7 +211,7 @@ program define AKM_IV, eclass
 		local CI_low = `hat_beta' - `critical_value' * `SE_AKM'
 		local CI_upp = `hat_beta' + `critical_value' * `SE_AKM'
 		
-		local tstat = `hat_beta' / `SE_AKM'
+		local tstat = (`hat_beta' - `beta0') / `SE_AKMnull_n'
 		local p = 2*(1 - normal(abs(`tstat')))
 		
 		** Output Results
