@@ -1,9 +1,51 @@
 program define AKM_OLS, eclass
 	syntax, dependant_var(str) shiftshare_var(str) share_varlist(str) alpha(str) ///
-			akmtype(str) [control_varlist(str) weight_var(str)]
+			akmtype(str) [control_varlist(str) weight_var(str) beta0(str)]
 	
 	set more off
 	set matsize 10000
+
+	** OLS results without AKM adjustment
+	local critical_value = invnormal(1-0.05/2)
+	if ("`weight_var'" ~= "") {
+		qui reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var']
+		
+		local SE_homo = _se[`shiftshare_var']
+		local t_homo  = _b[`shiftshare_var']/_se[`shiftshare_var']
+		local p_homo  = 2*ttail(e(df_r),abs(`t_homo'))
+		local CI_low_homo = _b[`shiftshare_var'] - `critical_value' * `SE_homo'
+		local CI_upp_homo = _b[`shiftshare_var'] + `critical_value' * `SE_homo'
+		
+		qui reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var'], r
+		local SE_r = _se[`shiftshare_var']
+		local t_r  = _b[`shiftshare_var']/_se[`shiftshare_var']
+		local p_r  = 2*ttail(e(df_r),abs(`t_homo'))
+		local CI_low_r = _b[`shiftshare_var'] - `critical_value' * `SE_r'
+		local CI_upp_r = _b[`shiftshare_var'] + `critical_value' * `SE_r'
+		
+		* reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var'], cluster(state)
+	}
+	else {
+		qui reg `dependant_var' `shiftshare_var' `control_varlist'
+		local SE_homo = _se[`shiftshare_var']
+		local t_homo  = _b[`shiftshare_var']/_se[`shiftshare_var']
+		local p_homo  = 2*ttail(e(df_r),abs(`t_homo'))
+		local CI_low_homo = _b[`shiftshare_var'] - `critical_value' * `SE_homo'
+		local CI_upp_homo = _b[`shiftshare_var'] + `critical_value' * `SE_homo'
+		
+		qui reg `dependant_var' `shiftshare_var' `control_varlist', r
+		local SE_r = _se[`shiftshare_var']
+		local t_r  = _b[`shiftshare_var']/_se[`shiftshare_var']
+		local p_r  = 2*ttail(e(df_r),abs(`t_homo'))
+		local CI_low_r = _b[`shiftshare_var'] - `critical_value' * `SE_r'
+		local CI_upp_r = _b[`shiftshare_var'] + `critical_value' * `SE_r'
+		
+		* reg `dependant_var' `shiftshare_var' `control_varlist', cluster(state)
+	}
+	
+	if "`beta0'" == "" {
+		local beta0 = 0
+	}
 	
 	** Generate constant term
 	qui gen constant = 1
@@ -33,7 +75,7 @@ program define AKM_OLS, eclass
 	else {
 		mkmat `shiftshare_var' constant, matrix(Mn)     //Matrix of regressors
 	}
-	mkmat emp_share*, matrix(ln)						//Matrix of Shares
+	mkmat `share_varlist', matrix(ln)						//Matrix of Shares
 	mkmat `dependant_var', matrix(tildeYn) 				//Dependent Variable  
 	
 	** Estimate AKM standard error
@@ -70,48 +112,11 @@ program define AKM_OLS, eclass
 
 		mat variance = inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
 		local SE_AKM = sqrt(variance[1,1])
-		local critical_value = invnormal(0.5 + `alpha'/2)
 		local CI_low = `coef' - `critical_value' * `SE_AKM'
 		local CI_upp = `coef' + `critical_value' * `SE_AKM'
 		
 		local tstat = `coef' / `SE_AKM'
 		local p = 2*(1 - normal(abs(`tstat')))
-		
-		if ("`weight_var'" ~= "") {
-			qui reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var']
-			
-			local SE_homo = _se[`shiftshare_var']
-			local t_homo  = _b[`shiftshare_var']/_se[`shiftshare_var']
-			local p_homo  = 2*ttail(e(df_r),abs(`t_homo'))
-			local CI_low_homo = _b[`shiftshare_var'] - `critical_value' * `SE_homo'
-			local CI_upp_homo = _b[`shiftshare_var'] + `critical_value' * `SE_homo'
-			
-			qui reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var'], r
-			local SE_r = _se[`shiftshare_var']
-			local t_r  = _b[`shiftshare_var']/_se[`shiftshare_var']
-			local p_r  = 2*ttail(e(df_r),abs(`t_homo'))
-			local CI_low_r = _b[`shiftshare_var'] - `critical_value' * `SE_r'
-			local CI_upp_r = _b[`shiftshare_var'] + `critical_value' * `SE_r'
-			
-			* reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var'], cluster(state)
-		}
-		else {
-			qui reg `dependant_var' `shiftshare_var' `control_varlist'
-			local SE_homo = _se[`shiftshare_var']
-			local t_homo  = _b[`shiftshare_var']/_se[`shiftshare_var']
-			local p_homo  = 2*ttail(e(df_r),abs(`t_homo'))
-			local CI_low_homo = _b[`shiftshare_var'] - `critical_value' * `SE_homo'
-			local CI_upp_homo = _b[`shiftshare_var'] + `critical_value' * `SE_homo'
-			
-			qui reg `dependant_var' `shiftshare_var' `control_varlist', r
-			local SE_r = _se[`shiftshare_var']
-			local t_r  = _b[`shiftshare_var']/_se[`shiftshare_var']
-			local p_r  = 2*ttail(e(df_r),abs(`t_homo'))
-			local CI_low_r = _b[`shiftshare_var'] - `critical_value' * `SE_r'
-			local CI_upp_r = _b[`shiftshare_var'] + `critical_value' * `SE_r'
-			
-			* reg `dependant_var' `shiftshare_var' `control_varlist', cluster(state)
-		}
 		
 		** Output Results
 		display " "
@@ -142,7 +147,6 @@ program define AKM_OLS, eclass
 		mat Xddd = inv(ln'*ln) * (ln' * Xdd)
 		
 		** Compute SE
-		local beta0 = 0
 		mat e_null = Ydd - Xdd * `beta0'
 		
 		mat R_raw = (e_null' * ln)'
@@ -163,7 +167,6 @@ program define AKM_OLS, eclass
 		local SE_AKMnull_n = sqrt(variance[1,1])
 		
 		* Compute Confidence INterval
-		local critical_value = invnormal(1-0.05/2)
 		local critical2 = `critical_value'^2
 		mat RY = Xdd' * Ydd
 		mat RX = Xdd' * Xdd
@@ -215,43 +218,6 @@ program define AKM_OLS, eclass
 		local SE_AKM0 = (`CI_upp' - `CI_low')/(2 * `critical_value')
 		local tstat = (`coef' - `beta0') / `SE_AKMnull_n'
 		local p = 2*(1 - normal(abs(`tstat')))
-		
-		** Output Results
-		if ("`weight_var'" ~= "") {
-			qui reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var']
-			
-			local SE_homo = _se[`shiftshare_var']
-			local t_homo  = _b[`shiftshare_var']/_se[`shiftshare_var']
-			local p_homo  = 2*ttail(e(df_r),abs(`t_homo'))
-			local CI_low_homo = _b[`shiftshare_var'] - `critical_value' * `SE_homo'
-			local CI_upp_homo = _b[`shiftshare_var'] + `critical_value' * `SE_homo'
-			
-			qui reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var'], r
-			local SE_r = _se[`shiftshare_var']
-			local t_r  = _b[`shiftshare_var']/_se[`shiftshare_var']
-			local p_r  = 2*ttail(e(df_r),abs(`t_homo'))
-			local CI_low_r = _b[`shiftshare_var'] - `critical_value' * `SE_r'
-			local CI_upp_r = _b[`shiftshare_var'] + `critical_value' * `SE_r'
-			
-			* reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var'], cluster(state)
-		}
-		else {
-			qui reg `dependant_var' `shiftshare_var' `control_varlist'
-			local SE_homo = _se[`shiftshare_var']
-			local t_homo  = _b[`shiftshare_var']/_se[`shiftshare_var']
-			local p_homo  = 2*ttail(e(df_r),abs(`t_homo'))
-			local CI_low_homo = _b[`shiftshare_var'] - `critical_value' * `SE_homo'
-			local CI_upp_homo = _b[`shiftshare_var'] + `critical_value' * `SE_homo'
-			
-			qui reg `dependant_var' `shiftshare_var' `control_varlist', r
-			local SE_r = _se[`shiftshare_var']
-			local t_r  = _b[`shiftshare_var']/_se[`shiftshare_var']
-			local p_r  = 2*ttail(e(df_r),abs(`t_homo'))
-			local CI_low_r = _b[`shiftshare_var'] - `critical_value' * `SE_r'
-			local CI_upp_r = _b[`shiftshare_var'] + `critical_value' * `SE_r'
-			
-			* reg `dependant_var' `shiftshare_var' `control_varlist', cluster(state)
-		}
 		
 		** Output Results
 		display " "

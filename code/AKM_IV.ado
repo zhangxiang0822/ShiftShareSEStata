@@ -5,6 +5,32 @@ program define AKM_IV, eclass
 	set more off
 	set matsize 10000
 	
+	** Show first-stage results
+	preserve
+	display ""
+	display "Below we show First-stage results"
+	if "`control_varlist'" ~= "" {
+		if "`weight_var'" ~= "" {
+			AKM_OLS, dependant_var(`endogenous_var') shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+					 alpha(`alpha') control_varlist(`control_varlist') weight_var(`weight_var') akmtype(`akmtype')
+		}
+		else {
+			AKM_OLS, dependant_var(`endogenous_var') shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+					 alpha(`alpha') control_varlist(`control_varlist') akmtype(`akmtype')
+		}
+	}
+	else {
+		if "`weight_var'" ~= "" {
+			AKM_OLS, dependant_var(`endogenous_var') shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+					 alpha(`alpha') weight_var(`weight_var') akmtype(`akmtype')
+		}
+		else {
+			AKM_OLS, dependant_var(`endogenous_var') shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+					 alpha(`alpha') akmtype(`akmtype')
+		}
+	}
+	restore
+
 	** IV results withoud AKM adjustment
 	local critical_value = invnormal(0.5 + `alpha'/2)
 	if ("`weight_var'" ~= "") {
@@ -128,6 +154,7 @@ program define AKM_IV, eclass
 		
 		** Output Results
 		display " "
+		display "Below we show IV regression results"
 		display "The estimated coefficient is " %5.4f `hat_beta'
 		display "Inference"
 		display "               Std. Error   p-value   Lower CI   Upper CI"
@@ -216,11 +243,13 @@ program define AKM_IV, eclass
 		
 		** Output Results
 		display " "
+		display "Below we show IV regression results"
 		display "The estimated coefficient is " %5.4f `hat_beta'
 		display "Inference"
 		display "               Std. Error   p-value   Lower CI   Upper CI"
 		display "Homoscedastic     " %5.4f `SE_homo'  "    " %5.4f `p_homo' "    " %5.4f `CI_low_homo' "    " %5.4f `CI_upp_homo' 
 		display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r' 
 		display "AKM0              " %5.4f `SE_AKM'   "    " %5.4f `p' "    " %5.4f `CI_low' "    " %5.4f `CI_upp'
+		display "In AKM0 Estimation, the Confidence Interval Type is: Type " `CIType'
 	}	
 end
