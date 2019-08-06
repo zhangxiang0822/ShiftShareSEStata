@@ -1,6 +1,6 @@
 program define AKM_IV, eclass
 	syntax, dependant_var(str) endogenous_var(str) shiftshare_iv(str) share_varlist(str) alpha(str) ///
-			akmtype(str) [control_varlist(str) weight_var(str) beta0(str)]
+			akmtype(str) [control_varlist(str) weight_var(str) beta0(str) path_cluster(str)]
 	
 	set more off
 	set matsize 10000
@@ -131,19 +131,89 @@ program define AKM_IV, eclass
 	** Estimate AKM standard error
 	if `akmtype' == 1 {
 		** Compute SE
-		mat R_raw = (e' * ln)'
-		svmat R_raw, names(R_raw)
-		svmat Xddd, names(Xddd)
-		qui drop if mi(R_raw)
-		
-		gen R_raw_sq = R_raw^2
-		gen Xddd_sq = Xddd^2
+		if "`path_cluster'" == "" {
+			mat R_raw = (e' * ln)'
+			svmat R_raw, names(R_raw)
+			svmat Xddd, names(Xddd)
+			qui drop if mi(R_raw)
+			
+			gen R_raw_sq = R_raw^2
+			gen Xddd_sq = Xddd^2
 
-		mkmat R_raw_sq, matrix(R_sq)
-		mkmat Xddd_sq, matrix(Xddd_sq)
-		
-		mat LambdaAKM = R_sq' * Xddd_sq
+			mkmat R_raw_sq, matrix(R_sq)
+			mkmat Xddd_sq, matrix(Xddd_sq)
+			
+			mat LambdaAKM = R_sq' * Xddd_sq
+		}
+		else {
+			preserve
+			
+			** Get list of share variables by cluster
+			use "`path_cluster'", clear
+			qui tostring sector, replace
 
+			qui levelsof sec_3d
+			local sector_3d_list = r(levels)
+			local num_cluster = 0
+
+			foreach sector_3d in `sector_3d_list' {
+				local num_cluster = `num_cluster' + 1
+				qui levelsof sector if sec_3d == `sector_3d'
+	
+				local cluster_list`num_cluster' = r(levels)
+			}
+			
+			restore
+			
+			mat LambdaAKM = J(1,1,0)
+			forvalues i = 1(1)`num_cluster' {
+				display "Compute SE of Sector " "`i'"
+				local num_withincluster_category = 0
+				
+				foreach category in `cluster_list`i''{
+					local num_withincluster_category = `num_withincluster_category' + 1
+					mkmat emp_share`category' , matrix(temp`num_withincluster_category')
+				} 
+				
+				matrix small_share_matrix = temp1
+				
+				* When having more than 1 categories within cluster
+				if `num_withincluster_category' > 1 { 
+					forvalues j = 2(1)`num_withincluster_category' {
+						matrix small_share_matrix = small_share_matrix , temp`j'
+					}
+				}
+				
+				* Generate Xddd_cluster
+				mat Xddd_cluster = J(`num_withincluster_category ', 1, 0)
+				local temp_count = 0
+				foreach category in `cluster_list`i''{
+				local temp_count = `temp_count' + 1
+					mat Xddd_cluster[`temp_count', 1] = Xddd[`category', 1]
+				} 
+				
+				*
+				mat RXcluster_raw = (e' * small_share_matrix)'
+				svmat RXcluster_raw, names(RXcluster_raw)
+				svmat Xddd_cluster, names(Xddd_cluster)
+				
+				preserve
+				qui drop if mi(RXcluster)
+				
+				qui gen RXcluster = RXcluster_raw * Xddd_cluster
+				mkmat RXcluster, matrix(RXcluster)
+				
+				mat RXcluster_sq = RXcluster * RXcluster'
+				
+				* Restore dataset and Drop variables
+				restore
+				drop RXcluster_raw* Xddd_cluster* RXcluster 
+				
+				mata : st_matrix("RXcluster_sq_rowsum", rowsum(st_matrix("RXcluster_sq")))
+				mata : st_matrix("RXcluster_sq_fullsum", colsum(st_matrix("RXcluster_sq_rowsum")))
+				mat LambdaAKM = LambdaAKM + RXcluster_sq_fullsum[1,1]
+			}
+		}
 		mat variance = 1/`hatpi'^2 * inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
 		local SE_AKM = sqrt(variance[1,1])
 		local CI_low = `hat_beta' - `critical_value' * `SE_AKM'
@@ -165,21 +235,125 @@ program define AKM_IV, eclass
 	
 	if `akmtype' == 0 {
 		** Compute SE
-		mat e_null = Ydd - Xdd * `beta0'
+		mat e_null = Ydd - Gdd * `beta0'
 		
-		mat R_raw = (e_null' * ln)'
-		svmat R_raw, names(R_raw)
 		svmat Xddd, names(Xddd)
-		qui drop if mi(R_raw)
-		
-		gen R_raw_sq = R_raw^2
-		gen Xddd_sq = Xddd^2
-
-		mkmat R_raw_sq, matrix(R_sq)
+		qui gen Xddd_sq = Xddd^2
 		mkmat Xddd_sq, matrix(Xddd_sq)
 		
-		mat LambdaAKM = R_sq' * Xddd_sq
+		if "`path_cluster'" == "" {
+			mat R_raw = (e_null' * ln)'
+			svmat R_raw, names(R_raw)
+			
+			qui drop if mi(R_raw)
+			
+			gen R_raw_sq = R_raw^2
+			mkmat R_raw_sq, matrix(R_sq)
+			
+			mat LambdaAKM = R_sq' * Xddd_sq
+		}
+		else {
+			preserve
+			
+			** Get list of share variables by cluster
+			use "`path_cluster'", clear
+			qui tostring sector, replace
 
+			qui levelsof sec_3d
+			local sector_3d_list = r(levels)
+			local num_cluster = 0
+
+			foreach sector_3d in `sector_3d_list' {
+				local num_cluster = `num_cluster' + 1
+				qui levelsof sector if sec_3d == `sector_3d'
+	
+				local cluster_list`num_cluster' = r(levels)
+			}
+			
+			restore
+			
+			mat LambdaAKM = J(1,1,0)
+			mat SXY = J(1, 1, 0)
+			mat SYY = J(1, 1, 0)
+			mat SXX = J(1, 1, 0)
+			
+			forvalues i = 1(1)`num_cluster' {
+				display "Compute SE of Sector " "`i'"
+				local num_withincluster_category = 0
+				
+				foreach category in `cluster_list`i''{
+					local num_withincluster_category = `num_withincluster_category' + 1
+					mkmat emp_share`category' , matrix(temp`num_withincluster_category')
+				} 
+				
+				matrix small_share_matrix = temp1
+				
+				* When having more than 1 categories within cluster
+				if `num_withincluster_category' > 1 { 
+					forvalues j = 2(1)`num_withincluster_category' {
+						matrix small_share_matrix = small_share_matrix , temp`j'
+					}
+				}
+				
+				* Generate Xddd_cluster
+				mat Xddd_cluster = J(`num_withincluster_category ', 1, 0)
+				local temp_count = 0
+				foreach category in `cluster_list`i''{
+				local temp_count = `temp_count' + 1
+					mat Xddd_cluster[`temp_count', 1] = Xddd[`category', 1]
+				} 
+				
+				*
+				mat RXcluster_raw = (e_null' * small_share_matrix)'
+				mat Ydd_lnCluster = (Ydd'* small_share_matrix)'
+				mat Xdd_lnCluster = (Gdd'* small_share_matrix)'
+				
+				svmat RXcluster_raw, names(RXcluster_raw)
+				svmat Xddd_cluster,  names(Xddd_cluster)
+				svmat Ydd_lnCluster, names(Ydd_lnCluster)
+				svmat Xdd_lnCluster, names(Xdd_lnCluster)
+				
+				preserve
+				qui drop if mi(RXcluster)
+				
+				qui gen RXcluster  = RXcluster_raw * Xddd_cluster
+				qui gen lnYCluster = Ydd_lnCluster * Xddd_cluster
+				qui gen lnXCluster = Xdd_lnCluster * Xddd_cluster
+				
+				mkmat RXcluster, matrix(RXcluster)
+				mkmat lnYCluster, matrix(lnYCluster)
+				mkmat lnXCluster, matrix(lnXCluster)
+
+				mat RXcluster_sq   = RXcluster * RXcluster'
+				mat SXY_cluster_sq = lnXCluster * lnYCluster'
+				mat SYY_cluster_sq = lnYCluster * lnYCluster'
+				mat SXX_cluster_sq = lnXCluster * lnXCluster'
+				
+				* Restore dataset and Drop variables
+				restore
+				drop RXcluster_raw* Xddd_cluster* RXcluster Ydd_lnCluster* Xdd_lnCluster
+				
+				mata : st_matrix("RXcluster_sq_rowsum", rowsum(st_matrix("RXcluster_sq")))
+				mata : st_matrix("RXcluster_sq_fullsum", colsum(st_matrix("RXcluster_sq_rowsum")))
+				mata : st_matrix("SYY_cluster_sq_rowsum", rowsum(st_matrix("SYY_cluster_sq")))
+				mata : st_matrix("SYY_cluster_sq_fullsum", colsum(st_matrix("SYY_cluster_sq_rowsum")))
+				mata : st_matrix("SXX_cluster_sq_rowsum", rowsum(st_matrix("SXX_cluster_sq")))
+				mata : st_matrix("SXX_cluster_sq_fullsum", colsum(st_matrix("SXX_cluster_sq_rowsum")))
+				mata : st_matrix("SXY_cluster_sq_rowsum", rowsum(st_matrix("SXY_cluster_sq")))
+				mata : st_matrix("SXY_cluster_sq_fullsum", colsum(st_matrix("SXY_cluster_sq_rowsum")))
+				
+				mat list SXX_cluster_sq_fullsum
+				mat SXY = SXY + SXY_cluster_sq_fullsum[1,1]
+				mat SYY = SYY + SYY_cluster_sq_fullsum[1,1]
+				mat SXX = SXX + SXX_cluster_sq_fullsum[1,1]
+				
+			}
+			
+			preserve
+			qui drop if mi(Xddd_sq) 
+			mkmat Xddd_sq, matrix(Xddd_sq)
+			restore
+		}
 		* Variance matrix
 		mat variance = 1/`hatpi'^2 * inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
 		local SE_AKMnull_n = sqrt(variance[1,1])
@@ -190,22 +364,24 @@ program define AKM_IV, eclass
 		mat RY = Xdd' * Ydd
 		mat RX = Xdd' * Gdd
 		
-		mat lnY =  (Ydd' * ln)'
-		mat lnX =  (Gdd' * ln)'
-		
-		svmat lnY, names(lnY)
-		svmat lnX, names(lnX)
-		gen lnY_lnX = lnY * lnX
-		gen lnY_lnY = lnY1 * lnY1
-		gen lnX_lnX = lnX1 * lnX1
-		
-		mkmat lnY_lnX, matrix(lnY_lnX)
-		mkmat lnY_lnY, matrix(lnY_lnY)
-		mkmat lnX_lnX, matrix(lnX_lnX)
-		
-		mat SXY = lnY_lnX' * Xddd_sq
-		mat SXX = lnX_lnX' * Xddd_sq
-		mat SYY = lnY_lnY' * Xddd_sq
+		if "`path_cluster'" == "" {
+			mat lnY =  (Ydd' * ln)'
+			mat lnX =  (Gdd' * ln)'
+			
+			svmat lnY, names(lnY)
+			svmat lnX, names(lnX)
+			gen lnY_lnX = lnY * lnX
+			gen lnY_lnY = lnY1 * lnY1
+			gen lnX_lnX = lnX1 * lnX1
+			
+			mkmat lnY_lnX, matrix(lnY_lnX)
+			mkmat lnY_lnY, matrix(lnY_lnY)
+			mkmat lnX_lnX, matrix(lnX_lnX)
+			
+			mat SXY = lnY_lnX' * Xddd_sq
+			mat SXX = lnX_lnX' * Xddd_sq
+			mat SYY = lnY_lnY' * Xddd_sq
+		}
 		
 		mat Q = (RX * RX)/`critical2' - SXX
 		mat Delta = (RY * RX - `critical2' * SXY) * (RY * RX - `critical2' * SXY) - (RX * RX - `critical2' * SXX) * (RY * RY - `critical2' * SYY)

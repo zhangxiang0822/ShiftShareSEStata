@@ -1,0 +1,49 @@
+----------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  D:\Dropbox\RA_Princeton\RA_Morales\BartikSEStata\output/logfiles/preclean.log
+  log type:  text
+ opened on:   5 Aug 2019, 17:23:38
+
+. 
+. ** Prepare ADH data
+. use "data/ADH_emp_share.dta", clear
+
+. renvars, subst(var emp_share)
+
+. save "temp/ADH_emp_share.dta", replace
+file temp/ADH_emp_share.dta saved
+
+. 
+. use "data/ADHdata.dta", clear
+
+. merge 1:1 czone year using "temp/ADH_emp_share.dta", assert(3) nogen
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             0
+    matched                             1,444  
+    -----------------------------------------
+
+. sort year czone
+
+. 
+. save "data/ADH_derived.dta", replace
+file data/ADH_derived.dta saved
+
+. 
+. ** Prepare sector data
+. use "data/section.dta", clear
+
+. 
+. * label 4-digit section from 1 to N
+. gen industry_temp = _n
+
+. drop sec
+
+. rename industry_temp sector
+
+. save "data/sector_derived.dta", replace
+file data/sector_derived.dta saved
+
+. 
+. cap log close
