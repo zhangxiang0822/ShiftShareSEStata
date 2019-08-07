@@ -113,14 +113,12 @@ program define AKM_OLS, eclass
 			mat LambdaAKM = R_sq' * Xddd_sq
 		}
 		else {
-			timer on 1
-			
-			mat e_ln = (e' * ln)'
 			preserve
 			
 			** Get list of share variables by cluster
 			use "`path_cluster'", clear
 			
+			mat e_ln = (e' * ln)'
 			svmat e_ln, names(e_ln)
 			svmat Xddd, names(Xddd)
 			keep if ~mi(e_ln)
@@ -128,79 +126,8 @@ program define AKM_OLS, eclass
 		
 			matrix opaccum A = e_ln, group(sec_3d) opvar(Xddd)
 			mat LambdaAKM = A[1,1]
-			/*
-			sort sec_3d sector
 			
-			tostring sec_3d, replace
-
-			qui describe
-			local num_sector = r(N)
-			
-			local current_cluster = ""
-			local num_cluster = 0
-			
-			forvalues i = 1(1)`num_sector' {
-				local sec_3d = sec_3d[`i']
-				local column = sector[`i']
-				
-				if ("`sec_3d'" != "`current_cluster'") {	
-					local num_cluster = `num_cluster' + 1
-					local current_cluster = "`sec_3d'"
-					
-					timer on 6
-					matrix share_matrix`num_cluster' = ln[1..., `column']
-					timer off 6
-					timer list 6
-					matrix Xddd_cluster`num_cluster' = Xddd[`column', 1]
-				}
-				else {
-					timer on 7
-					matrix share_matrix`num_cluster' = share_matrix`num_cluster', ln[1..., `column']
-					matrix Xddd_cluster`num_cluster' = Xddd_cluster`num_cluster'\Xddd[`column', 1]
-					timer off 7
-					timer list 7
-				}
-			}
-			*/
 			restore
-			
-			timer off 1
-			timer list 1
-			/*
-			timer on 2
-			mat LambdaAKM = J(1,1,0)
-			* 
-			forvalues i = 1(1)`num_cluster'{
-				*
-				mat RXcluster_raw = (e' * share_matrix`i')'
-				local dim = rowsof(RXcluster_raw)
-				
-				mat RXcluster = J(`dim', 1, 0)
-				forvalues j = 1(1)`dim' {
-					mat RXcluster[`j', 1] = RXcluster_raw[`j',1] * Xddd_cluster`i'[`j',1]
-				}
-				*svmat RXcluster_raw,   names(RXcluster_raw)
-				*svmat Xddd_cluster`i', names(Xddd_cluster)
-				
-				*preserve
-				*qui drop if mi(RXcluster)
-				*qui gen RXcluster = RXcluster_raw * Xddd_cluster
-				*mkmat RXcluster, matrix(RXcluster)
-				mat RXcluster_sq = RXcluster * RXcluster'
-				
-				* Restore dataset and Drop variables
-				*restore
-				*drop RXcluster_raw* Xddd* RXcluster Xddd_cluster*
-				*mata : st_matrix("RXcluster_sq_rowsum", rowsum(st_matrix("RXcluster_sq")))
-				*mata : st_matrix("RXcluster_sq_fullsum", colsum(st_matrix("RXcluster_sq_rowsum")))
-				*mata st_matrix("RXcluster_sq_fullsum", sum(st_matrix("RXcluster_sq")))
-				matrix multi = J(`dim', 1, 1)
-				mat sum_matrix = multi' * RXcluster_sq * multi
-				mat LambdaAKM = LambdaAKM + sum_matrix[1, 1]
-			}
-			timer off 2
-			timer list 2
-			*/
 		}
 
 		mat variance = inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
@@ -257,105 +184,46 @@ program define AKM_OLS, eclass
 			mat LambdaAKM = R_sq' * Xddd_sq
 		}
 		else {
-			preserve
+			* preserve
 			
 			** Get list of share variables by cluster
 			use "`path_cluster'", clear
-			qui tostring sector, replace
+			
+			mat e_ln = (e_null' * ln)'
+			mat Xdd_ln = (Xdd' * ln)'
+			mat Ydd_ln = (Ydd' * ln)'
+			svmat e_ln, names(e_ln)
+			svmat Xdd_ln, names(Xdd_ln)
+			svmat Ydd_ln, names(Ydd_ln)
+			svmat Xddd, names(Xddd)
+			
+			qui keep if ~mi(e_ln)
+			sort sec_3d
+		
+			matrix opaccum A = e_ln, group(sec_3d) opvar(Xddd)
+			mat LambdaAKM = A[1,1]
 
+			matrix opaccum B = Xdd_ln, group(sec_3d) opvar(Xddd)
+			mat SXX = B[1,1]
+			
+			matrix opaccum B = Ydd_ln, group(sec_3d) opvar(Xddd)
+			mat SYY = B[1,1]
+			
 			qui levelsof sec_3d
-			local sector_3d_list = r(levels)
-			local num_cluster = 0
-
-			foreach sector_3d in `sector_3d_list' {
-				local num_cluster = `num_cluster' + 1
-				qui levelsof sector if sec_3d == `sector_3d'
-	
-				local cluster_list`num_cluster' = r(levels)
-			}
+			local sector_list = r(levels)
 			
-			restore
-			
-			mat LambdaAKM = J(1,1,0)
-			mat SXY = J(1, 1, 0)
-			mat SYY = J(1, 1, 0)
-			mat SXX = J(1, 1, 0)
-			
-			forvalues i = 1(1)`num_cluster' {
-				* display "Compute SE of Sector " "`i'"
-				local num_withincluster_category = 0
-				
-				foreach category in `cluster_list`i''{
-					local num_withincluster_category = `num_withincluster_category' + 1
-					mkmat emp_share`category' , matrix(temp`num_withincluster_category')
-				} 
-				
-				matrix small_share_matrix = temp1
-				
-				* When having more than 1 categories within cluster
-				if `num_withincluster_category' > 1 { 
-					forvalues j = 2(1)`num_withincluster_category' {
-						matrix small_share_matrix = small_share_matrix , temp`j'
-					}
-				}
-				
-				* Generate Xddd_cluster
-				mat Xddd_cluster = J(`num_withincluster_category ', 1, 0)
-				local temp_count = 0
-				foreach category in `cluster_list`i''{
-				local temp_count = `temp_count' + 1
-					mat Xddd_cluster[`temp_count', 1] = Xddd[`category', 1]
-				} 
-				
-				*
-				mat RXcluster_raw = (e_null' * small_share_matrix)'
-				mat Ydd_lnCluster = (Ydd'* small_share_matrix)'
-				mat Xdd_lnCluster = (Xdd'* small_share_matrix)'
-				
-				svmat RXcluster_raw, names(RXcluster_raw)
-				svmat Xddd_cluster,  names(Xddd_cluster)
-				svmat Ydd_lnCluster, names(Ydd_lnCluster)
-				svmat Xdd_lnCluster, names(Xdd_lnCluster)
-				
+			mat SXY = J(1,1,0)
+			foreach cat in `sector_list' {
 				preserve
-				qui drop if mi(RXcluster)
+				qui keep if sec_3d == `cat'
 				
-				qui gen RXcluster  = RXcluster_raw * Xddd_cluster
-				qui gen lnYCluster = Ydd_lnCluster * Xddd_cluster
-				qui gen lnXCluster = Xdd_lnCluster * Xddd_cluster
+				mkmat Xdd_ln, matrix(Xdd_ln1)
+				mkmat Ydd_ln, matrix(Ydd_ln1)
+				mkmat Xddd, matrix(Xddd1) 
 				
-				mkmat RXcluster, matrix(RXcluster)
-				mkmat lnYCluster, matrix(lnYCluster)
-				mkmat lnXCluster, matrix(lnXCluster)
-
-				mat RXcluster_sq   = RXcluster * RXcluster'
-				mat SXY_cluster_sq = lnXCluster * lnYCluster'
-				mat SYY_cluster_sq = lnYCluster * lnYCluster'
-				mat SXX_cluster_sq = lnXCluster * lnXCluster'
-				
-				* Restore dataset and Drop variables
+				mat SXY = SXY + Xdd_ln1'*Xddd1*Xddd1'*Ydd_ln1
 				restore
-				drop RXcluster_raw* Xddd_cluster* RXcluster Ydd_lnCluster* Xdd_lnCluster
-				
-				mata : st_matrix("RXcluster_sq_rowsum", rowsum(st_matrix("RXcluster_sq")))
-				mata : st_matrix("RXcluster_sq_fullsum", colsum(st_matrix("RXcluster_sq_rowsum")))
-				mata : st_matrix("SYY_cluster_sq_rowsum", rowsum(st_matrix("SYY_cluster_sq")))
-				mata : st_matrix("SYY_cluster_sq_fullsum", colsum(st_matrix("SYY_cluster_sq_rowsum")))
-				mata : st_matrix("SXX_cluster_sq_rowsum", rowsum(st_matrix("SXX_cluster_sq")))
-				mata : st_matrix("SXX_cluster_sq_fullsum", colsum(st_matrix("SXX_cluster_sq_rowsum")))
-				mata : st_matrix("SXY_cluster_sq_rowsum", rowsum(st_matrix("SXY_cluster_sq")))
-				mata : st_matrix("SXY_cluster_sq_fullsum", colsum(st_matrix("SXY_cluster_sq_rowsum")))
-				
-				mat LambdaAKM = LambdaAKM + RXcluster_sq_fullsum[1,1]
-				mat SXY = SXY + SXY_cluster_sq_fullsum[1,1]
-				mat SYY = SYY + SYY_cluster_sq_fullsum[1,1]
-				mat SXX = SXX + SXX_cluster_sq_fullsum[1,1]
 			}
-			
-			preserve
-			qui drop if mi(Xddd_sq) 
-			mkmat Xddd_sq, matrix(Xddd_sq)
-			restore
 		}
 		
 		* Variance matrix
@@ -399,7 +267,7 @@ program define AKM_OLS, eclass
 			local CIType = 1
 		} 
 		else {
-			if `delta' > 0 {
+			if `Delta' > 0 {
 				mat CIl = ((RY*RX - `critical2' * SXY) + `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
 				mat CIu = ((RY*RX - `critical2' * SXY) - `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
 				local CI_low = CIl[1,1]
@@ -423,8 +291,20 @@ program define AKM_OLS, eclass
 		display "Inference"
 		display "               Std. Error   p-value   Lower CI   Upper CI"
 		display "Homoscedastic     " %5.4f `SE_homo'  "    " %5.4f `p_homo' "    " %5.4f `CI_low_homo' "    " %5.4f `CI_upp_homo' 
-		display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r' 
-		display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " %5.4f `CI_low' "    " %5.4f `CI_upp' 
-		display "In AKM0 Estimation, the Confidence Interval Type is: Type " `CIType'
+		display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r'
+		
+		if `CIType' == 1 {
+			display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " %5.4f `CI_low' "    " %5.4f `CI_upp'
+		}
+		else if `CIType' == 2 {
+			display "Inference"
+			display "               Std. Error   p-value   CI"
+			display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " "=(-Inf, " %5.4f `CI_low' "] + [" %5.4f `CI_upp' "Inf)"
+		}
+		else {
+			display "Inference"
+			display "               Std. Error   p-value   CI"
+			display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " "=(-Inf, Inf)"
+		}
 	}
 end
