@@ -75,6 +75,7 @@ program define AKM_OLS, eclass
 	else {
 		mkmat `shiftshare_var' constant, matrix(Mn)     //Matrix of regressors
 	}
+	
 	mkmat `share_varlist', matrix(ln)						//Matrix of Shares
 	mkmat `dependant_var', matrix(tildeYn) 				//Dependent Variable  
 	
@@ -95,7 +96,7 @@ program define AKM_OLS, eclass
 		mat Ydd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeYn
 		mat Xdd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeXn
 		mat Xddd = inv(ln'*ln) * (ln' * Xdd)
-	
+		
 		** Compute SE
 		if "`path_cluster'" == "" {
 			mat R_raw = (e' * ln)'
@@ -112,75 +113,96 @@ program define AKM_OLS, eclass
 			mat LambdaAKM = R_sq' * Xddd_sq
 		}
 		else {
+			timer on 1
+			
+			mat e_ln = (e' * ln)'
 			preserve
 			
 			** Get list of share variables by cluster
 			use "`path_cluster'", clear
-			qui tostring sector, replace
-
-			qui levelsof sec_3d
-			local sector_3d_list = r(levels)
-			local num_cluster = 0
-
-			foreach sector_3d in `sector_3d_list' {
-				local num_cluster = `num_cluster' + 1
-				qui levelsof sector if sec_3d == `sector_3d'
-	
-				local cluster_list`num_cluster' = r(levels)
-			}
 			
+			svmat e_ln, names(e_ln)
+			svmat Xddd, names(Xddd)
+			keep if ~mi(e_ln)
+			sort sec_3d
+		
+			matrix opaccum A = e_ln, group(sec_3d) opvar(Xddd)
+			mat LambdaAKM = A[1,1]
+			/*
+			sort sec_3d sector
+			
+			tostring sec_3d, replace
+
+			qui describe
+			local num_sector = r(N)
+			
+			local current_cluster = ""
+			local num_cluster = 0
+			
+			forvalues i = 1(1)`num_sector' {
+				local sec_3d = sec_3d[`i']
+				local column = sector[`i']
+				
+				if ("`sec_3d'" != "`current_cluster'") {	
+					local num_cluster = `num_cluster' + 1
+					local current_cluster = "`sec_3d'"
+					
+					timer on 6
+					matrix share_matrix`num_cluster' = ln[1..., `column']
+					timer off 6
+					timer list 6
+					matrix Xddd_cluster`num_cluster' = Xddd[`column', 1]
+				}
+				else {
+					timer on 7
+					matrix share_matrix`num_cluster' = share_matrix`num_cluster', ln[1..., `column']
+					matrix Xddd_cluster`num_cluster' = Xddd_cluster`num_cluster'\Xddd[`column', 1]
+					timer off 7
+					timer list 7
+				}
+			}
+			*/
 			restore
 			
+			timer off 1
+			timer list 1
+			/*
+			timer on 2
 			mat LambdaAKM = J(1,1,0)
-			forvalues i = 1(1)`num_cluster' {
-				display "Compute SE of Sector " "`i'"
-				local num_withincluster_category = 0
-				
-				foreach category in `cluster_list`i''{
-					local num_withincluster_category = `num_withincluster_category' + 1
-					mkmat emp_share`category' , matrix(temp`num_withincluster_category')
-				} 
-				
-				matrix small_share_matrix = temp1
-				
-				* When having more than 1 categories within cluster
-				if `num_withincluster_category' > 1 { 
-					forvalues j = 2(1)`num_withincluster_category' {
-						matrix small_share_matrix = small_share_matrix , temp`j'
-					}
-				}
-				
-				* Generate Xddd_cluster
-				mat Xddd_cluster = J(`num_withincluster_category ', 1, 0)
-				local temp_count = 0
-				foreach category in `cluster_list`i''{
-				local temp_count = `temp_count' + 1
-					mat Xddd_cluster[`temp_count', 1] = Xddd[`category', 1]
-				} 
-				
+			* 
+			forvalues i = 1(1)`num_cluster'{
 				*
-				mat RXcluster_raw = (e' * small_share_matrix)'
-				svmat RXcluster_raw, names(RXcluster_raw)
-				svmat Xddd_cluster, names(Xddd_cluster)
+				mat RXcluster_raw = (e' * share_matrix`i')'
+				local dim = rowsof(RXcluster_raw)
 				
-				preserve
-				qui drop if mi(RXcluster)
+				mat RXcluster = J(`dim', 1, 0)
+				forvalues j = 1(1)`dim' {
+					mat RXcluster[`j', 1] = RXcluster_raw[`j',1] * Xddd_cluster`i'[`j',1]
+				}
+				*svmat RXcluster_raw,   names(RXcluster_raw)
+				*svmat Xddd_cluster`i', names(Xddd_cluster)
 				
-				qui gen RXcluster = RXcluster_raw * Xddd_cluster
-				mkmat RXcluster, matrix(RXcluster)
-				
+				*preserve
+				*qui drop if mi(RXcluster)
+				*qui gen RXcluster = RXcluster_raw * Xddd_cluster
+				*mkmat RXcluster, matrix(RXcluster)
 				mat RXcluster_sq = RXcluster * RXcluster'
 				
 				* Restore dataset and Drop variables
-				restore
-				drop RXcluster_raw* Xddd_cluster* RXcluster 
-				
-				mata : st_matrix("RXcluster_sq_rowsum", rowsum(st_matrix("RXcluster_sq")))
-				mata : st_matrix("RXcluster_sq_fullsum", colsum(st_matrix("RXcluster_sq_rowsum")))
-				mat LambdaAKM = LambdaAKM + RXcluster_sq_fullsum[1,1]
+				*restore
+				*drop RXcluster_raw* Xddd* RXcluster Xddd_cluster*
+				*mata : st_matrix("RXcluster_sq_rowsum", rowsum(st_matrix("RXcluster_sq")))
+				*mata : st_matrix("RXcluster_sq_fullsum", colsum(st_matrix("RXcluster_sq_rowsum")))
+				*mata st_matrix("RXcluster_sq_fullsum", sum(st_matrix("RXcluster_sq")))
+				matrix multi = J(`dim', 1, 1)
+				mat sum_matrix = multi' * RXcluster_sq * multi
+				mat LambdaAKM = LambdaAKM + sum_matrix[1, 1]
 			}
+			timer off 2
+			timer list 2
+			*/
 		}
-		
+
 		mat variance = inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
 		local SE_AKM = sqrt(variance[1,1])
 		local CI_low = `coef' - `critical_value' * `SE_AKM'
@@ -260,7 +282,7 @@ program define AKM_OLS, eclass
 			mat SXX = J(1, 1, 0)
 			
 			forvalues i = 1(1)`num_cluster' {
-				display "Compute SE of Sector " "`i'"
+				* display "Compute SE of Sector " "`i'"
 				local num_withincluster_category = 0
 				
 				foreach category in `cluster_list`i''{
