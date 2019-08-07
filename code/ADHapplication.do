@@ -10,7 +10,7 @@ log using "output/logfiles/AKM.log", replace
 
 prog main
 	**** AKM OLS examples	
-
+	/*
 	* (1) AKM, no cluster
 	timer on 1
 	use "data/ADH_derived.dta", clear
@@ -20,6 +20,7 @@ prog main
 	timer off 1
 	timer list 1
 	
+	
 	* (2) AKM0, cluster
 	timer on 2
 	use "data/ADH_derived.dta", clear
@@ -28,6 +29,7 @@ prog main
 			 share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.95) akmtype(0) 
 	timer off 2
 	timer list 2
+	*/
 	
 	* (3) AKM, no cluster
 	timer on 3
@@ -37,7 +39,7 @@ prog main
 		     share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.95) akmtype(1) path_cluster("data/sector_derived.dta")
 	timer off 3
 	timer list 3
-	
+	/*
 	* (4) AKM0, cluster
 	timer on 4
 	use "data/ADH_derived.dta", clear
