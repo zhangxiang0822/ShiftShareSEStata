@@ -1,12 +1,17 @@
-program define AKM_OLS, eclass
-	syntax, dependant_var(str) shiftshare_var(str) share_varlist(str) alpha(str) ///
-			akmtype(str) [control_varlist(str) weight_var(str) beta0(str) path_cluster(str)]
-	
+program define reg_ss, eclass
+	syntax varlist(numeric min=1 max=1), ///
+		   shiftshare_var(varlist numeric min=1 max=1) share_varlist(varlist numeric min=1) alpha(real) ///
+		   akmtype(int) ///
+		   [control_varlist(varlist numeric min=1) weight_var(varlist numeric min=1 max=1) ///
+		    beta0(real 0.0) path_cluster(str) cluster_var(str)]
+			
 	set more off
 	set matsize 10000
-
+	
+	local dependant_var `varlist'
+	
 	** OLS results without AKM adjustment
-	local critical_value = invnormal(1-0.05/2)
+	local critical_value = invnormal(1-`alpha'/2)
 	if ("`weight_var'" ~= "") {
 		qui reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var']
 		
@@ -121,10 +126,10 @@ program define AKM_OLS, eclass
 			mat e_ln = (e' * ln)'
 			svmat e_ln, names(e_ln)
 			svmat Xddd, names(Xddd)
-			keep if ~mi(e_ln)
-			sort sec_3d
+			qui keep if ~mi(e_ln)
+			sort `cluster_var'
 		
-			matrix opaccum A = e_ln, group(sec_3d) opvar(Xddd)
+			matrix opaccum A = e_ln, group(`cluster_var') opvar(Xddd)
 			mat LambdaAKM = A[1,1]
 			
 			restore
@@ -183,9 +188,7 @@ program define AKM_OLS, eclass
 			
 			mat LambdaAKM = R_sq' * Xddd_sq
 		}
-		else {
-			* preserve
-			
+		else {		
 			** Get list of share variables by cluster
 			use "`path_cluster'", clear
 			
@@ -198,24 +201,24 @@ program define AKM_OLS, eclass
 			svmat Xddd, names(Xddd)
 			
 			qui keep if ~mi(e_ln)
-			sort sec_3d
+			sort `cluster_var'
 		
-			matrix opaccum A = e_ln, group(sec_3d) opvar(Xddd)
+			matrix opaccum A = e_ln, group(`cluster_var') opvar(Xddd)
 			mat LambdaAKM = A[1,1]
 
-			matrix opaccum B = Xdd_ln, group(sec_3d) opvar(Xddd)
+			matrix opaccum B = Xdd_ln, group(`cluster_var') opvar(Xddd)
 			mat SXX = B[1,1]
 			
-			matrix opaccum B = Ydd_ln, group(sec_3d) opvar(Xddd)
+			matrix opaccum B = Ydd_ln, group(`cluster_var') opvar(Xddd)
 			mat SYY = B[1,1]
 			
-			qui levelsof sec_3d
+			qui levelsof `cluster_var'
 			local sector_list = r(levels)
 			
 			mat SXY = J(1,1,0)
 			foreach cat in `sector_list' {
 				preserve
-				qui keep if sec_3d == `cat'
+				qui keep if `cluster_var' == `cat'
 				
 				mkmat Xdd_ln, matrix(Xdd_ln1)
 				mkmat Ydd_ln, matrix(Ydd_ln1)
@@ -234,7 +237,7 @@ program define AKM_OLS, eclass
 		local critical2 = `critical_value'^2
 		mat RY = Xdd' * Ydd
 		mat RX = Xdd' * Xdd
-		
+	
 		if "`path_cluster'" == "" {
 			mat lnY =  (Ydd' * ln)'
 			mat lnX =  (Xdd' * ln)'
@@ -253,12 +256,13 @@ program define AKM_OLS, eclass
 			mat SXX = lnX_lnX' * Xddd_sq
 			mat SYY = lnY_lnY' * Xddd_sq
 		}
-
+		
 		mat Q = (RX * RX)/`critical2' - SXX
 		mat Delta = (RY * RX - `critical2' * SXY) * (RY * RX - `critical2' * SXY) - (RX * RX - `critical2' * SXX) * (RY * RY - `critical2' * SYY)
 		
 		local Q = Q[1,1]
 		local Delta = Delta[1,1]
+		
 		if `Q' > 0 {
 			mat CIl = ((RY * RX - `critical2' * SXY) - `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
 			mat CIu = ((RY * RX - `critical2' * SXY) + `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
@@ -280,8 +284,9 @@ program define AKM_OLS, eclass
 				local CIType = 3
 			}
 		}    
-		
+
 		local SE_AKM0 = (`CI_upp' - `CI_low')/(2 * `critical_value')
+
 		local tstat = (`coef' - `beta0') / `SE_AKMnull_n'
 		local p = 2*(1 - normal(abs(`tstat')))
 		

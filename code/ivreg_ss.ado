@@ -1,40 +1,46 @@
-program define AKM_IV, eclass
-	syntax, dependant_var(str) endogenous_var(str) shiftshare_iv(str) share_varlist(str) alpha(str) ///
-			akmtype(str) [control_varlist(str) weight_var(str) beta0(str) path_cluster(str) firststage(str)]
+program define ivreg_ss, eclass
+	version 14.0
+	syntax varlist(numeric min=1 max=1), endogenous_var(varlist numeric min=1 max=1) ///
+		   shiftshare_iv(varlist numeric min=1 max=1) share_varlist(varlist numeric min=1) alpha(real) ///
+		   akmtype(int) ///
+		   [control_varlist(varlist numeric min=1) weight_var(varlist numeric min=1 max=1) ///
+		    beta0(real 0.0) path_cluster(str) cluster_var(str) firststage(integer 0)]
 	
 	set more off
 	set matsize 10000
 	
+	local dependant_var `varlist'
+
 	** Show first-stage results
-	if "`firststage'" ~= "" {
+	if `firststage' != 0 {
 		preserve
 		display ""
 		display "Below we show First-stage results"
 		if "`control_varlist'" ~= "" {
 			if "`weight_var'" ~= "" {
-				AKM_OLS, dependant_var(`endogenous_var') shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-						 alpha(`alpha') control_varlist(`control_varlist') weight_var(`weight_var') akmtype(`akmtype') path_cluster(`path_cluster')
+				reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+						 alpha(`alpha') control_varlist(`control_varlist') weight_var(`weight_var') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var("`cluster_var'")
 			}
 			else {
-				AKM_OLS, dependant_var(`endogenous_var') shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-						 alpha(`alpha') control_varlist(`control_varlist') akmtype(`akmtype') path_cluster(`path_cluster')
+				reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+						 alpha(`alpha') control_varlist(`control_varlist') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var(`cluster_var')
 			}
 		}
 		else {
 			if "`weight_var'" ~= "" {
-				AKM_OLS, dependant_var(`endogenous_var') shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-						 alpha(`alpha') weight_var(`weight_var') akmtype(`akmtype') path_cluster(`path_cluster')
+				reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+						 alpha(`alpha') weight_var(`weight_var') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var(`cluster_var')
 			}
 			else {
-				AKM_OLS, dependant_var(`endogenous_var') shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-						 alpha(`alpha') akmtype(`akmtype') path_cluster(`path_cluster')
+				reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+						 alpha(`alpha') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var(`cluster_var')
 			}
 		}
 		restore
 	}
 
 	** IV results withoud AKM adjustment
-	local critical_value = invnormal(0.5 + `alpha'/2)
+	local critical_value = invnormal(1- `alpha'/2)
 	if ("`weight_var'" ~= "") {
 		qui ivregress 2sls `dependant_var' `control_varlist' (`endogenous_var' = `shiftshare_iv') [aw = `weight_var']
 		local SE_homo = _se[`endogenous_var']
@@ -156,10 +162,10 @@ program define AKM_IV, eclass
 			mat e_ln = (e' * ln)'
 			svmat e_ln, names(e_ln)
 			svmat Xddd, names(Xddd)
-			keep if ~mi(e_ln)
-			sort sec_3d
+			qui keep if ~mi(e_ln)
+			sort `cluster_var'
 		
-			matrix opaccum A = e_ln, group(sec_3d) opvar(Xddd)
+			matrix opaccum A = e_ln, group(`cluster_var') opvar(Xddd)
 			mat LambdaAKM = A[1,1]
 			
 			restore
@@ -215,24 +221,24 @@ program define AKM_IV, eclass
 			svmat Xddd, names(Xddd)
 			
 			qui keep if ~mi(e_ln)
-			sort sec_3d
+			sort `cluster_var'
 		
-			matrix opaccum A = e_ln, group(sec_3d) opvar(Xddd)
+			matrix opaccum A = e_ln, group(`cluster_var') opvar(Xddd)
 			mat LambdaAKM = A[1,1]
 
-			matrix opaccum B = Xdd_ln, group(sec_3d) opvar(Xddd)
+			matrix opaccum B = Xdd_ln, group(`cluster_var') opvar(Xddd)
 			mat SXX = B[1,1]
 			
-			matrix opaccum B = Ydd_ln, group(sec_3d) opvar(Xddd)
+			matrix opaccum B = Ydd_ln, group(`cluster_var') opvar(Xddd)
 			mat SYY = B[1,1]
 			
-			qui levelsof sec_3d
+			qui levelsof `cluster_var'
 			local sector_list = r(levels)
 			
 			mat SXY = J(1,1,0)
 			foreach cat in `sector_list' {
 				preserve
-				qui keep if sec_3d == `cat'
+				qui keep if `cluster_var' == `cat'
 				
 				mkmat Xdd_ln, matrix(Xdd_ln1)
 				mkmat Ydd_ln, matrix(Ydd_ln1)
