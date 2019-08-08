@@ -1,4 +1,5 @@
 program define reg_ss, eclass
+	version 14.0
 	syntax varlist(numeric min=1 max=1), ///
 		   shiftshare_var(varlist numeric min=1 max=1) share_varlist(varlist numeric min=1) alpha(real) ///
 		   akmtype(int) ///
