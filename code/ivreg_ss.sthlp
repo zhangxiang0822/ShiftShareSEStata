@@ -55,6 +55,25 @@ form, weighted least squares is used with weights "weights" (that is, minimizing
 {title:Examples}
 You may download the needed data at https://github.com/zhangxiang0822/BartikSEStata/tree/master/data
 
+We use a subset of data from Autor, Dorn, and Hanson (2013)(ADH) to illustrate the confidence intervals implemented in this package. Variables in ADH dataset are listed below.
+- d_sh_empl: Change in the share of working-age population
+- d_sh_empl_mfg: Change in the share of working-age population employed in manufacturing.
+- d_sh_empl_nmfg: Change in the share of working-age population employed in non-manufacturing.
+- d_tradeusch_pw: Change in sectoral U.S. imports from China normalized by U.S. total employment in the corresponding sector, aggregated to regional level.
+- d_tradeotch_pw_lag: Change in sectoral imports from China by rest of the world, aggregated to regional level
+- emp_share1 - emp_share770: The local employment share for the first to the 770th sector.
+- weight: Regression weights corresponding to start of period CZ share of national populations
+- state: State FIPS code
+- czone: CZ number
+- t2: Indicator for 2000-2007
+- l_shind_manuf_cbp: Employment share of manufacturing
+- l_sh_popedu_c: percent population college-educated
+- l_sh_popfborn: percent population foreign-born
+- l_sh_empl_f: percent employment among women
+- l_sh_routine33: percent employment in routine occupations
+- l_task_outsource: Offshorability index of occupations in CZ
+
+
 Example 1: AKM, no cluster
 {phang2}{cmd:. 	use "data/ADH_derived.dta", clear }{p_end}
 {phang2}{cmd:. 	local control_varlist t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource }{p_end}
@@ -81,7 +100,7 @@ For more examples, please see "https://github.com/zhangxiang0822/BartikSEStata/b
 {marker reference}{...}
 {title:Reference}
 {pstd} Adão, Rodrigo, Michal Kolesár, and Eduardo Morales. Shift-share designs: Theory and inference. No. w24944. National Bureau of Economic Research, 2018. {p_end}
-
+{pstd} David, H., David Dorn, and Gordon H. Hanson. "The China syndrome: Local labor market effects of import competition in the United States." American Economic Review 103, no. 6 (2013): 2121-68. {p_end}
 {pstd} This code is adapted from MATLAB and R version code by Adão, Rodrigo, Michal Kolesár, and Eduardo Morales. {p_end}
 
 {pstd} You may find MATLAB version code at "https://github.com/kolesarm/BartikSEMatlab". {p_end} 
