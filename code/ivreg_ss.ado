@@ -2,15 +2,22 @@ program define ivreg_ss, eclass
 	version 14.0
 	syntax varlist(numeric min=1 max=1), endogenous_var(varlist numeric min=1 max=1) ///
 		   shiftshare_iv(varlist numeric min=1 max=1) share_varlist(varlist numeric min=1) alpha(real) ///
-		   akmtype(int) ///
 		   [control_varlist(varlist numeric min=1) weight_var(varlist numeric min=1 max=1) ///
-		    beta0(real 0.0) path_cluster(str) cluster_var(str) firststage(integer 0)]
+		    akmtype(str) beta0(real 0.0) path_cluster(str) cluster_var(str) firststage(integer 0)]
 	
 	set more off
 	set matsize 10000
 	
 	local dependant_var `varlist'
 
+	if "`beta0'" == "" {
+		local beta0 = 0
+	}
+	
+	if "`akmtype'" == "" {
+		local akmtype = 1
+	}
+	
 	** Show first-stage results
 	if `firststage' != 0 {
 		preserve
@@ -74,10 +81,6 @@ program define ivreg_ss, eclass
 		local CI_upp_r = _b[`endogenous_var'] + `critical_value' * `SE_r'
 		
 		* ivregress 2sls `dependant_var' (`endogenous_var' = `shiftshare_iv') [aw = `weight_var'], cluster(state)
-	}
-		
-	if "`beta0'" == "" {
-		local beta0 = 0
 	}
 	
 	** Generate constant term
@@ -283,7 +286,7 @@ program define ivreg_ss, eclass
 		
 		local Q = Q[1,1]
 		local Delta = Delta[1,1]
-
+		
 		if `Q' > 0 {
 			mat CIl = ((RY * RX - `critical2' * SXY) - `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
 			mat CIu = ((RY * RX - `critical2' * SXY) + `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
@@ -307,8 +310,6 @@ program define ivreg_ss, eclass
 		}    
 		
 		local SE_AKM = (`CI_upp' - `CI_low')/(2 * `critical_value')
-		local CI_low = `hat_beta' - `critical_value' * `SE_AKM'
-		local CI_upp = `hat_beta' + `critical_value' * `SE_AKM'
 		
 		local tstat = (`hat_beta' - `beta0') / `SE_AKMnull_n'
 		local p = 2*(1 - normal(abs(`tstat')))

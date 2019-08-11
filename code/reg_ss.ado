@@ -2,14 +2,22 @@ program define reg_ss, eclass
 	version 14.0
 	syntax varlist(numeric min=1 max=1), ///
 		   shiftshare_var(varlist numeric min=1 max=1) share_varlist(varlist numeric min=1) alpha(real) ///
-		   akmtype(int) ///
 		   [control_varlist(varlist numeric min=1) weight_var(varlist numeric min=1 max=1) ///
-		    beta0(real 0.0) path_cluster(str) cluster_var(str)]
+		    akmtype(str) beta0(real 0.0) path_cluster(str) cluster_var(str)]
 			
 	set more off
 	set matsize 10000
 	
 	local dependant_var `varlist'
+	
+	if "`beta0'" == "" {
+		local beta0 = 0
+	}
+	
+	if "`akmtype'" == "" {
+		local akmtype = 1
+	}
+	
 	
 	** OLS results without AKM adjustment
 	local critical_value = invnormal(1-`alpha'/2)
@@ -47,10 +55,6 @@ program define reg_ss, eclass
 		local CI_upp_r = _b[`shiftshare_var'] + `critical_value' * `SE_r'
 		
 		* reg `dependant_var' `shiftshare_var' `control_varlist', cluster(state)
-	}
-	
-	if "`beta0'" == "" {
-		local beta0 = 0
 	}
 	
 	** Generate constant term
