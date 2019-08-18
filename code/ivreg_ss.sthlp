@@ -28,8 +28,8 @@
 {synoptline}
 {syntab:Model}
 {p2coldent:* {opt endogenous_var(varlist)}} Endogenous variable in the IV regression. {p_end}
-{p2coldent:* {opt shiftshare_iv(varlist)}} Shift-share covariate. {p_end}
-{p2coldent:* {opt share_varlist(varlist)}} List of variables containing the sector shares. Each variable indicates the shares corresponding to a sector for all regions. 
+{p2coldent:* {opt shiftshare_iv(varlist)}} Shift-share regressor of interest. {p_end}
+{p2coldent:* {opt share_varlist(varlist)}} List of variables containing the sector shares. Each variable indicates the regional shares corresponding to the particular sector. 
 Varlist must contain as many variables as there are sectors in the analysis. {p_end}
 {p2coldent:* {opt alpha}} Determines confidence level of reported confidence intervals, which will have coverate 1-alpha. Its default value  is 0.05. {p_end}
 
@@ -42,7 +42,7 @@ Adão, Kolesár, and Morales (2019). If it equals 0, "reg_ss" applies the AKM0 i
 reported standard error corresponds to the normalized standard error, given by the length of the corresponding confidence interval divided by 2*z(1-alpha/2). The default akmtype value 
 is 1. {p_end}
 {synopt :{opt beta0 }} Null that is tested when "akmtype" equals 0 (only affects reported p-values). {p_end}
-{synopt :{opt path_cluster}} The path to the .dta file which stores the cluster information corresponding to each sector. Provide this if you want to compute 
+{synopt :{opt path_cluster}} The path to the .dta file which stores the cluster information corresponding to each sector. Provide this path if you want to compute 
 AKM or AKM0 confidence intervals and p-values accounting for sectoral clusters. {p_end}
 {synopt :{opt cluster_var}} The variable name of the cluster variable in the .dta file storing the cluster information corresponding to each sector. The order of 
 the sectors in this .dta file should be the same as the order of the sectors in the "varlist" containing the sector shares (the "share_varlist").{p_end}
@@ -50,7 +50,7 @@ the sectors in this .dta file should be the same as the order of the sectors in 
 
 {marker examples}{...}
 {title:Examples}
-You may download the needed data at https://github.com/zhangxiang0822/BartikSEStata/tree/master/data
+The data for these examples may be downloaded from https://github.com/zhangxiang0822/ShiftShareSEStata/blob/master/data/ADH_derived.dta
 
 We use a subset of data from Autor, Dorn, and Hanson (2013, ADH) to illustrate the confidence intervals implemented in this package. Variables in ADH dataset are listed below.
 - d_sh_empl: Change in the share of working-age population
@@ -82,13 +82,13 @@ Be sure to put "sector_derived.dta" to your local path
 {phang2}{cmd:. 	local control_varlist t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource }{p_end}
 {phang2}{cmd:.	ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) control_varlist(`control_varlist') share_varlist(emp_share*) weight_var(weight) akmtype(0)}
 
-Example 3: AKM, with cluster
+Example 3: AKM, clustered at three digit SIC level
 {phang2}{cmd:. 	use "data/ADH_derived.dta", clear }{p_end}
 {phang2}{cmd:. 	local control_varlist t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource }{p_end}
 {phang2}{cmd:. 	local local_path "data/sector_derived.dta"}{p_end}
 {phang2}{cmd:.	ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) control_varlist(`control_varlist') share_varlist(emp_share*) weight_var(weight) akmtype(0) path_cluster(`local_path') cluster_var(sec_3d)}
 
-Example 4: AKM0, with cluster
+Example 4: AKM0, clustered at three digit SIC level
 {phang2}{cmd:. 	use "data/ADH_derived.dta", clear }{p_end}
 {phang2}{cmd:. 	local control_varlist t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource }{p_end}
 {phang2}{cmd:. 	local local_path "data/sector_derived.dta"}{p_end}
@@ -102,6 +102,16 @@ For more examples, please see "https://github.com/zhangxiang0822/BartikSEStata/b
 			 
 {marker author}{...}
 {title:Author}
+
+{pstd}Rodrigo Adão{p_end}
+{pstd}rodrigo.adao@chicagobooth.edu{p_end}
+
+{pstd}Michal Kolesár{p_end}
+{pstd}mkolesar@princeton.edu{p_end}
+
+{pstd}Eduardo Morales{p_end}
+{pstd}ecmorale@princeton.edu{p_end}
+
 {pstd}Xiang Zhang{p_end}
 {pstd}xiangzhang@princeton.edu{p_end}
 
@@ -112,5 +122,5 @@ For more examples, please see "https://github.com/zhangxiang0822/BartikSEStata/b
 {pstd} David, H., David Dorn, and Gordon H. Hanson (2013) "The China Syndrome: Local Llabor Market Effects of Import Ccompetition in the United States." American Economic Review, 103, no. 6,  (2013): 2121-2168.
  {p_end}
 
-{pstd} You may find a MATLAB version of this code at "https://github.com/kolesarm/BartikSEMatlab". {p_end} 
-{pstd} You may find a R version of this code at "https://github.com/kolesarm/BartikSE". {p_end} 
+{pstd} You may find a MATLAB version of this code is available at "https://github.com/kolesarm/ShiftShareSEMatlab".. {p_end} 
+{pstd} You may find a R version of this code is available code at "https://github.com/kolesarm/ShiftShareSE". {p_end} 

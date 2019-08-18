@@ -18,7 +18,6 @@ program define reg_ss, eclass
 		local akmtype = 1
 	}
 	
-	
 	** OLS results without AKM adjustment
 	local critical_value = invnormal(1-`alpha'/2)
 	if ("`weight_var'" ~= "") {
@@ -78,9 +77,18 @@ program define reg_ss, eclass
 		}
 	}
 	
+	capture _rmcoll `control_varlist' constant, force
+	if _rc == 0{
+		_rmcoll `control_varlist' constant, force
+		local controls `r(varlist)'
+	}
+	else {
+		display "You must manually generate dummy variables, instead of using i.XXX"
+	}
+	
 	** Generate Matrix of Regressors, shares, and outcome variable
 	if ("`control_varlist'" ~= "") {
-		mkmat `shiftshare_var' `control_varlist' constant, matrix(Mn)   //Matrix of regressors
+		mkmat `shiftshare_var' `controls', matrix(Mn)   //Matrix of regressors
 	}
 	else {
 		mkmat `shiftshare_var' constant, matrix(Mn)     //Matrix of regressors
@@ -93,12 +101,13 @@ program define reg_ss, eclass
 	if `akmtype' == 1 {
 		** OLS Estimates
 		mat hat_theta = inv(Mn'*Mn)*(Mn' * tildeYn)
+		
 		mat e = tildeYn - Mn * hat_theta
 		mat hat_beta = hat_theta[1, .]
 		local coef = hat_theta[1,1]
 		
 		** Auxiliary variables
-		mkmat `control_varlist' constant, matrix(tildeZn)
+		mkmat `controls', matrix(tildeZn)
 		mkmat `shiftshare_var', matrix(tildeXn)
 		local dim = rowsof(tildeXn)
 		
@@ -162,12 +171,13 @@ program define reg_ss, eclass
 	if `akmtype' == 0 {
 		** OLS Estimates
 		mat hat_theta = inv(Mn'*Mn)*(Mn' * tildeYn)
+		
 		mat e = tildeYn - Mn * hat_theta
 		mat hat_beta = hat_theta[1, .]
 		local coef = hat_theta[1,1]
 		
 		** Auxiliary variables
-		mkmat `control_varlist' constant, matrix(tildeZn)
+		mkmat `controls', matrix(tildeZn)
 		mkmat `shiftshare_var', matrix(tildeXn)
 		local dim = rowsof(tildeXn)
 		
@@ -309,7 +319,7 @@ program define reg_ss, eclass
 		else if `CIType' == 2 {
 			display "Inference"
 			display "               Std. Error   p-value   CI"
-			display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " "=(-Inf, " %5.4f `CI_low' "] + [" %5.4f `CI_upp' "Inf)"
+			display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " "=(-Inf, " %5.4f `CI_low' "] + [" %5.4f `CI_upp' " , Inf)"
 		}
 		else {
 			display "Inference"
@@ -317,4 +327,16 @@ program define reg_ss, eclass
 			display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " "=(-Inf, Inf)"
 		}
 	}
+	
+	** Save results for display
+	ereturn scalar b = `coef'
+	if `akmtype' == 0 {
+		ereturn scalar se = `SE_AKM0'
+	}
+	else {
+		ereturn scalar se = `SE_AKM'
+	}
+	ereturn scalar CI_upp = `CI_upp'
+	ereturn scalar CI_low = `CI_low'
+	ereturn scalar p = `p'
 end

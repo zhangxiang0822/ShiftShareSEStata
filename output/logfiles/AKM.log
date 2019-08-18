@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  D:\Dropbox\RA_Princeton\RA_Morales\BartikSEStata\output/logfiles/AKM.log
   log type:  text
- opened on:  11 Aug 2019, 16:03:36
+ opened on:  18 Aug 2019, 14:20:11
 
 . 
 . prog main
@@ -57,7 +57,7 @@
 .         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
->                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(1) firststage(1)
+>                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(1) 
  24.         timer off 5
  25.         timer list 5
  26.         
@@ -67,7 +67,7 @@
  28.         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
->                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) beta0(0) firststage(1)
+>                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) beta0(0) 
  29.         timer off 6
  30.         timer list 6
  31.         
@@ -79,7 +79,7 @@
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(1) path_cluster("data/sector_
-> derived.dta") cluster_var(sec_3d) firststage(1)
+> derived.dta") cluster_var(sec_3d) 
  34.         timer off 7
  35.         timer list 7
  36. 
@@ -90,7 +90,7 @@
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) beta0(0) path_cluster("dat
-> a/sector_derived.dta") cluster_var(sec_3d) firststage(1)
+> a/sector_derived.dta") cluster_var(sec_3d) 
  39.         timer off 8
  40.         timer list 8
  41.         

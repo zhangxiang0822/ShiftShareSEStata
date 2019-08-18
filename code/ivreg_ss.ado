@@ -66,17 +66,17 @@ program define ivreg_ss, eclass
 		* ivregress 2sls `dependant_var' `control_varlist' (`endogenous_var' = `shiftshare_iv') [aw = `weight_var'], cluster(state)
 	}
 	else {
-		qui ivregress 2sls `dependant_var' (`endogenous_var' = `shiftshare_iv') [aw = `weight_var']
+		qui ivregress 2sls `dependant_var' (`endogenous_var' = `shiftshare_iv') 
 		local SE_homo = _se[`endogenous_var']
 		local z_homo  = _b[`endogenous_var']/_se[`endogenous_var']
 		local p_homo  = normal(`z_homo')
 		local CI_low_homo = _b[`endogenous_var'] - `critical_value' * `SE_homo'
 		local CI_upp_homo = _b[`endogenous_var'] + `critical_value' * `SE_homo'
 		
-		qui ivregress 2sls `dependant_var' (`endogenous_var' = `shiftshare_iv') [aw = `weight_var'], r 
+		qui ivregress 2sls `dependant_var' (`endogenous_var' = `shiftshare_iv'), r 
 		local SE_r = _se[`endogenous_var']
 		local z_r  = _b[`endogenous_var']/_se[`endogenous_var']
-		local p_homo  = normal(`z_r')
+		local p_r  = normal(`z_r')
 		local CI_low_r = _b[`endogenous_var'] - `critical_value' * `SE_r'
 		local CI_upp_r = _b[`endogenous_var'] + `critical_value' * `SE_r'
 		
@@ -104,14 +104,23 @@ program define ivreg_ss, eclass
 		}
 	}
 	
+	capture _rmcoll `control_varlist' constant, force
+	if _rc == 0{
+		_rmcoll `control_varlist' constant, force
+		local controls `r(varlist)'
+	}
+	else {
+		display "You must manually generate dummy variables, instead of using i.XXX"
+	}
+		
 	** Generate Matrix of Regressors, shares, and outcome variable
 	if ("`control_varlist'" ~= "") {
 		mkmat `shiftshare_iv' `control_varlist' constant, matrix(Mn) //Matrix of IVs
 		mkmat `endogenous_var' `control_varlist' constant, matrix(Gn)   //Matrix of regressors
 	}
 	else {
-		mkmat `shiftshare_iv' constant, matrix(Mn)     //Matrix of IVs
-		mkmat `endogenous_var' constant, matrix(Gn)    //Matrix of regressors
+		mkmat `shiftshare_iv' `control_varlist' matrix(Mn)     //Matrix of IVs
+		mkmat `endogenous_var' `control_varlist', matrix(Gn)    //Matrix of regressors
 	}
 	mkmat `share_varlist', matrix(ln)						//Matrix of Shares
 	mkmat `dependant_var', matrix(tildeYn) 				//Dependent Variable   
@@ -121,9 +130,11 @@ program define ivreg_ss, eclass
 	mat P2 = inv(Mn' * Mn)
 	mat P3 = Mn' * tildeYn
 	mat hat_theta = inv(P1'*P2*P1) * (P1'*P2*P3)
+	
 	mat e = tildeYn - Gn * hat_theta
 	local hat_beta = hat_theta[1, 1]
-
+	
+	
 	** Auxiliary variables
 	mkmat `control_varlist' constant, matrix(tildeZn)
 	mkmat `shiftshare_iv', matrix(tildeXn)
@@ -138,7 +149,7 @@ program define ivreg_ss, eclass
 	** First stage coefficient
 	mat hat_thetaFS = inv(Mn'*Mn) * (Mn'*Gdd)
 	local hatpi = hat_thetaFS[1,1]
-		
+	
 	** Estimate AKM standard error
 	if `akmtype' == 1 {
 		** Compute SE
@@ -170,7 +181,7 @@ program define ivreg_ss, eclass
 		
 			matrix opaccum A = e_ln, group(`cluster_var') opvar(Xddd)
 			mat LambdaAKM = A[1,1]
-			
+	
 			restore
 		}
 		mat variance = 1/`hatpi'^2 * inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
@@ -191,7 +202,7 @@ program define ivreg_ss, eclass
 		display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r' 
 		display "AKM               " %5.4f `SE_AKM'   "    " %5.4f `p' "    " %5.4f `CI_low' "    " %5.4f `CI_upp'
 	}
-	
+		
 	if `akmtype' == 0 {
 		** Compute SE
 		mat e_null = Ydd - Gdd * `beta0'
@@ -251,7 +262,7 @@ program define ivreg_ss, eclass
 				restore
 			}
 		}
-
+		
 		* Variance matrix
 		mat variance = 1/`hatpi'^2 * inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
 		local SE_AKMnull_n = sqrt(variance[1,1])
@@ -261,7 +272,7 @@ program define ivreg_ss, eclass
 		local critical2 = `critical_value'^2
 		mat RY = Xdd' * Ydd
 		mat RX = Xdd' * Gdd
-		
+
 		if "`path_cluster'" == "" {
 			mat lnY =  (Ydd' * ln)'
 			mat lnX =  (Gdd' * ln)'
@@ -309,7 +320,7 @@ program define ivreg_ss, eclass
 			}
 		}    
 		
-		local SE_AKM = (`CI_upp' - `CI_low')/(2 * `critical_value')
+		local SE_AKM0 = (`CI_upp' - `CI_low')/(2 * `critical_value')
 		
 		local tstat = (`hat_beta' - `beta0') / `SE_AKMnull_n'
 		local p = 2*(1 - normal(abs(`tstat')))
@@ -324,17 +335,31 @@ program define ivreg_ss, eclass
 		display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r' 
 		
 		if `CIType' == 1 {
-			display "AKM0              " %5.4f `SE_AKM'  "    " %5.4f `p' "    " %5.4f `CI_low' "    " %5.4f `CI_upp'
+			display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " %5.4f `CI_low' "    " %5.4f `CI_upp'
 		}
 		else if `CIType' == 2 {
 			display "Inference"
 			display "               Std. Error   p-value   CI"
-			display "AKM0              " %5.4f `SE_AKM'  "    " %5.4f `p' "    " "=(-Inf, " %5.4f `CI_low' "] + [" %5.4f `CI_upp' "Inf)"
+			display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " "=(-Inf, " %5.4f `CI_low' "] + [" %5.4f `CI_upp' ", Inf)"
 		}
 		else {
 			display "Inference"
 			display "               Std. Error   p-value   CI"
-			display "AKM0              " %5.4f `SE_AKM'  "    " %5.4f `p' "    " "=(-Inf, Inf)"
+			display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " "=(-Inf, Inf)"
 		}
 	}	
+	
+	** Save results for display
+	ereturn scalar b = `hat_beta'
+	if `akmtype' == 0 {
+		ereturn local se = `SE_AKM0'
+	}
+	else {
+		ereturn local se = `SE_AKM'
+	}
+
+	ereturn local CI_upp = `CI_upp'
+	ereturn local CI_low = `CI_low'
+	ereturn scalar p = `p'
+	*/
 end
