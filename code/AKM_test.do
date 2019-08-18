@@ -244,7 +244,7 @@ prog main
 	display ""
 	display "Expected value: -0.303104147760458, -0.389313219498141, -0.381728638531380, -0.391771441695858"
     display "Realized value: ``ci_c5_upp_akm', `ci_c5_upp_akm0', `ci_a5_upp_akm', `ci_a5_upp_akm0'"
-	
+
 	** Test_that: Weak IV
 	** iv0	
 	use "data/ADH_derived.dta", clear
@@ -264,7 +264,7 @@ prog main
 						alpha(0.05) akmtype(0) 
 						
 	local se_iv0 = `e(se)'
-
+	
 	** iv1
 	use "data/ADH_derived.dta", clear
 	gen division =  2*reg_midatl + 3*reg_encen + 4*reg_wncen + 5*reg_satl+ 6*reg_escen + 7*reg_wscen + 8*reg_mount + 9 * reg_pacif
@@ -337,6 +337,7 @@ prog main
 	reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
 			 control_varlist(`control_varlist') ///
 		     share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0)
+			 */
 end
 
 cap log close
