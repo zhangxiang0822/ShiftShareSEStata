@@ -79,7 +79,7 @@ program define reg_ss, eclass
 	
 	capture _rmcoll `control_varlist' constant, force
 	if _rc == 0{
-		_rmcoll `control_varlist' constant, force
+		_rmcoll `control_varlist', force
 		local controls `r(varlist)'
 	}
 	else {
@@ -88,7 +88,7 @@ program define reg_ss, eclass
 	
 	** Generate Matrix of Regressors, shares, and outcome variable
 	if ("`control_varlist'" ~= "") {
-		mkmat `shiftshare_var' `controls', matrix(Mn)   //Matrix of regressors
+		mkmat `shiftshare_var' `controls' constant, matrix(Mn)   //Matrix of regressors
 	}
 	else {
 		mkmat `shiftshare_var' constant, matrix(Mn)     //Matrix of regressors
@@ -177,7 +177,7 @@ program define reg_ss, eclass
 		local coef = hat_theta[1,1]
 		
 		** Auxiliary variables
-		mkmat `controls', matrix(tildeZn)
+		mkmat `controls' constant, matrix(tildeZn)
 		mkmat `shiftshare_var', matrix(tildeXn)
 		local dim = rowsof(tildeXn)
 		

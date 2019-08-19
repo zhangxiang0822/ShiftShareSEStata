@@ -104,9 +104,9 @@ program define ivreg_ss, eclass
 		}
 	}
 	
-	capture _rmcoll `control_varlist' constant, force
+	capture _rmcoll `control_varlist', force
 	if _rc == 0{
-		_rmcoll `control_varlist' constant, force
+		_rmcoll `control_varlist', force
 		local controls `r(varlist)'
 	}
 	else {
@@ -115,12 +115,12 @@ program define ivreg_ss, eclass
 		
 	** Generate Matrix of Regressors, shares, and outcome variable
 	if ("`control_varlist'" ~= "") {
-		mkmat `shiftshare_iv' `control_varlist' constant, matrix(Mn) //Matrix of IVs
-		mkmat `endogenous_var' `control_varlist' constant, matrix(Gn)   //Matrix of regressors
+		mkmat `shiftshare_iv' `controls' constant, matrix(Mn) //Matrix of IVs
+		mkmat `endogenous_var' `controls' constant, matrix(Gn)   //Matrix of regressors
 	}
 	else {
-		mkmat `shiftshare_iv' `control_varlist' matrix(Mn)     //Matrix of IVs
-		mkmat `endogenous_var' `control_varlist', matrix(Gn)    //Matrix of regressors
+		mkmat `shiftshare_iv' constant, matrix(Mn)     //Matrix of IVs
+		mkmat `endogenous_var' constant, matrix(Gn)    //Matrix of regressors
 	}
 	mkmat `share_varlist', matrix(ln)						//Matrix of Shares
 	mkmat `dependant_var', matrix(tildeYn) 				//Dependent Variable   
@@ -136,7 +136,7 @@ program define ivreg_ss, eclass
 	
 	
 	** Auxiliary variables
-	mkmat `control_varlist' constant, matrix(tildeZn)
+	mkmat `controls' constant, matrix(tildeZn)
 	mkmat `shiftshare_iv', matrix(tildeXn)
 	mkmat `endogenous_var', matrix(tildeGn)
 
