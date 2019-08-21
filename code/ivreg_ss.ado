@@ -1,17 +1,21 @@
 program define ivreg_ss, eclass
 	version 14.0
 	syntax varlist(numeric min=1 max=1), endogenous_var(varlist numeric min=1 max=1) ///
-		   shiftshare_iv(varlist numeric min=1 max=1) share_varlist(varlist numeric min=1) alpha(real) ///
+		   shiftshare_iv(varlist numeric min=1 max=1) share_varlist(varlist numeric min=1) ///
 		   [control_varlist(varlist numeric min=1) weight_var(varlist numeric min=1 max=1) ///
-		    akmtype(str) beta0(real 0.0) path_cluster(str) cluster_var(str) firststage(integer 0)]
+		    akmtype(str) beta0(real 0.0) alpha(str) path_cluster(str) cluster_var(str) firststage(integer 0)]
 	
 	set more off
 	set matsize 10000
 	
 	local dependant_var `varlist'
-
+	
 	if "`beta0'" == "" {
 		local beta0 = 0
+	}
+	
+	if "`alpha'" == "" {
+		local alpha = 0.05
 	}
 	
 	if "`akmtype'" == "" {
@@ -104,9 +108,9 @@ program define ivreg_ss, eclass
 		}
 	}
 	
-	capture _rmcoll `control_varlist', force
+	capture _rmcoll `control_varlist' constant, force nocons
 	if _rc == 0{
-		_rmcoll `control_varlist', force
+		_rmcoll `control_varlist' constant, force nocons
 		local controls `r(varlist)'
 	}
 	else {
@@ -115,8 +119,8 @@ program define ivreg_ss, eclass
 		
 	** Generate Matrix of Regressors, shares, and outcome variable
 	if ("`control_varlist'" ~= "") {
-		mkmat `shiftshare_iv' `controls' constant, matrix(Mn) //Matrix of IVs
-		mkmat `endogenous_var' `controls' constant, matrix(Gn)   //Matrix of regressors
+		mkmat `shiftshare_iv' `controls', matrix(Mn) //Matrix of IVs
+		mkmat `endogenous_var' `controls', matrix(Gn)   //Matrix of regressors
 	}
 	else {
 		mkmat `shiftshare_iv' constant, matrix(Mn)     //Matrix of IVs
@@ -136,7 +140,7 @@ program define ivreg_ss, eclass
 	
 	
 	** Auxiliary variables
-	mkmat `controls' constant, matrix(tildeZn)
+	mkmat `controls', matrix(tildeZn)
 	mkmat `shiftshare_iv', matrix(tildeXn)
 	mkmat `endogenous_var', matrix(tildeGn)
 

@@ -16,15 +16,24 @@ R version test can be found at:
 
 prog main
 	** Test_that
+	
 	* c1
 	use "data/ADH_derived.dta", clear
 	reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
 			 control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
-		     share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) path_cluster("data/sector_derived.dta") cluster_var(sec_3d)
+		     share_varlist(emp_share1-emp_share770) weight_var(weight) path_cluster("data/sector_derived.dta") cluster_var(sec_3d)
 	
 	local p_c1_akm = `e(p)'
 	local ci_c1_low_akm = `e(CI_low)'
 	local ci_c1_upp_akm = `e(CI_upp)'
+	/*
+	use "data/ADH_derived.dta", clear
+	reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) share_varlist(emp_share1-emp_share770)
+	
+	local p_c1_akm = `e(p)'
+	local ci_c1_low_akm = `e(CI_low)'
+	local ci_c1_upp_akm = `e(CI_upp)'
+	*/
 	
 	use "data/ADH_derived.dta", clear
 	reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///

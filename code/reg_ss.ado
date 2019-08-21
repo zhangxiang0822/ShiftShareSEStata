@@ -1,9 +1,9 @@
 program define reg_ss, eclass
 	version 14.0
 	syntax varlist(numeric min=1 max=1), ///
-		   shiftshare_var(varlist numeric min=1 max=1) share_varlist(varlist numeric min=1) alpha(real) ///
+		   shiftshare_var(varlist numeric min=1 max=1) share_varlist(varlist numeric min=1) ///
 		   [control_varlist(varlist numeric min=1) weight_var(varlist numeric min=1 max=1) ///
-		    akmtype(str) beta0(real 0.0) path_cluster(str) cluster_var(str)]
+		    akmtype(str) beta0(real 0.0) alpha(str) path_cluster(str) cluster_var(str)]
 			
 	set more off
 	set matsize 10000
@@ -14,12 +14,17 @@ program define reg_ss, eclass
 		local beta0 = 0
 	}
 	
+	if "`alpha'" == "" {
+		local alpha = 0.05
+	}
+	
 	if "`akmtype'" == "" {
 		local akmtype = 1
 	}
 	
 	** OLS results without AKM adjustment
 	local critical_value = invnormal(1-`alpha'/2)
+
 	if ("`weight_var'" ~= "") {
 		qui reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var']
 		
@@ -55,7 +60,7 @@ program define reg_ss, eclass
 		
 		* reg `dependant_var' `shiftshare_var' `control_varlist', cluster(state)
 	}
-	
+
 	** Generate constant term
 	qui gen constant = 1
 	
@@ -77,9 +82,9 @@ program define reg_ss, eclass
 		}
 	}
 	
-	capture _rmcoll `control_varlist' constant, force
+	capture _rmcoll `control_varlist' constant, force nocons
 	if _rc == 0{
-		_rmcoll `control_varlist', force
+		_rmcoll `control_varlist' constant, force nocons
 		local controls `r(varlist)'
 	}
 	else {
@@ -87,15 +92,9 @@ program define reg_ss, eclass
 	}
 	
 	** Generate Matrix of Regressors, shares, and outcome variable
-	if ("`control_varlist'" ~= "") {
-		mkmat `shiftshare_var' `controls' constant, matrix(Mn)   //Matrix of regressors
-	}
-	else {
-		mkmat `shiftshare_var' constant, matrix(Mn)     //Matrix of regressors
-	}
-	
-	mkmat `share_varlist', matrix(ln)						//Matrix of Shares
-	mkmat `dependant_var', matrix(tildeYn) 				//Dependent Variable  
+	mkmat `shiftshare_var' `controls', matrix(Mn)   //Matrix of regressors
+	mkmat `share_varlist', matrix(ln)				//Matrix of Shares
+	mkmat `dependant_var', matrix(tildeYn) 			//Dependent Variable  
 	
 	** Estimate AKM standard error
 	if `akmtype' == 1 {
@@ -107,7 +106,13 @@ program define reg_ss, eclass
 		local coef = hat_theta[1,1]
 		
 		** Auxiliary variables
-		mkmat `controls', matrix(tildeZn)
+		if "`control_varlist'" ~= "" {
+			mkmat `controls', matrix(tildeZn)
+		}
+		else {
+			mkmat constant, matrix(tildeZn)
+		}
+
 		mkmat `shiftshare_var', matrix(tildeXn)
 		local dim = rowsof(tildeXn)
 		
@@ -177,7 +182,7 @@ program define reg_ss, eclass
 		local coef = hat_theta[1,1]
 		
 		** Auxiliary variables
-		mkmat `controls' constant, matrix(tildeZn)
+		mkmat `controls', matrix(tildeZn)
 		mkmat `shiftshare_var', matrix(tildeXn)
 		local dim = rowsof(tildeXn)
 		
