@@ -22,9 +22,9 @@ program define reg_ss, eclass
 		local akmtype = 1
 	}
 	
-	** OLS results without AKM adjustment
+	** Some locals
 	local critical_value = invnormal(1-`alpha'/2)
-
+	
 	if ("`weight_var'" ~= "") {
 		qui reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var']
 		
@@ -89,12 +89,21 @@ program define reg_ss, eclass
 	}
 	else {
 		display "You must manually generate dummy variables, instead of using i.XXX"
+		exit
 	}
 	
 	** Generate Matrix of Regressors, shares, and outcome variable
 	mkmat `shiftshare_var' `controls', matrix(Mn)   //Matrix of regressors
 	mkmat `share_varlist', matrix(ln)				//Matrix of Shares
 	mkmat `dependant_var', matrix(tildeYn) 			//Dependent Variable  
+	
+	local num_counties = rowsof(ln)
+	local num_sector1  = colsof(ln)
+	
+	if (`num_counties' < `num_sector1') {
+		display "ERROR: You have more number of sectors than regions"
+		exit
+	}
 	
 	** Estimate AKM standard error
 	if `akmtype' == 1 {
@@ -119,15 +128,18 @@ program define reg_ss, eclass
 		mat I_mat = I(`dim')
 		mat Ydd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeYn
 		mat Xdd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeXn
+
 		mat Xddd = inv(ln'*ln) * (ln' * Xdd)
-		
+	
 		** Compute SE
 		if "`path_cluster'" == "" {
 			mat R_raw = (e' * ln)'
+
 			svmat R_raw, names(R_raw)
 			svmat Xddd, names(Xddd)
-			qui drop if mi(R_raw)
 			
+			qui drop if mi(R_raw)
+
 			gen R_raw_sq = R_raw^2
 			gen Xddd_sq = Xddd^2
 
@@ -135,12 +147,19 @@ program define reg_ss, eclass
 			mkmat Xddd_sq, matrix(Xddd_sq)
 			
 			mat LambdaAKM = R_sq' * Xddd_sq
+			
 		}
 		else {
-			preserve
-			
 			** Get list of share variables by cluster
 			use "`path_cluster'", clear
+			
+			qui sum `cluster_var'
+			local num_sector2 = r(N)
+			
+			if (`num_sector1' != `num_sector2') {
+				display "Error: The length of your cluster_var is different from the number of sectors"
+				exit
+			}
 			
 			mat e_ln = (e' * ln)'
 			svmat e_ln, names(e_ln)
@@ -150,8 +169,6 @@ program define reg_ss, eclass
 		
 			matrix opaccum A = e_ln, group(`cluster_var') opvar(Xddd)
 			mat LambdaAKM = A[1,1]
-			
-			restore
 		}
 
 		mat variance = inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
@@ -212,6 +229,14 @@ program define reg_ss, eclass
 			** Get list of share variables by cluster
 			use "`path_cluster'", clear
 			
+			qui sum `cluster_var'
+			local num_sector2 = r(N)
+			
+			if `num_sector1' != `num_sector2' {
+				display "The length of your cluster_var is different from the number of sectors"
+				exit
+			}
+			
 			mat e_ln = (e_null' * ln)'
 			mat Xdd_ln = (Xdd' * ln)'
 			mat Ydd_ln = (Ydd' * ln)'
@@ -236,6 +261,7 @@ program define reg_ss, eclass
 			local sector_list = r(levels)
 			
 			mat SXY = J(1,1,0)
+			
 			foreach cat in `sector_list' {
 				preserve
 				qui keep if `cluster_var' == `cat'

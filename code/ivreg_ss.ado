@@ -50,8 +50,9 @@ program define ivreg_ss, eclass
 		restore
 	}
 
-	** IV results withoud AKM adjustment
+	** Some locals
 	local critical_value = invnormal(1- `alpha'/2)
+	
 	if ("`weight_var'" ~= "") {
 		qui ivregress 2sls `dependant_var' `control_varlist' (`endogenous_var' = `shiftshare_iv') [aw = `weight_var']
 		local SE_homo = _se[`endogenous_var']
@@ -115,6 +116,7 @@ program define ivreg_ss, eclass
 	}
 	else {
 		display "You must manually generate dummy variables, instead of using i.XXX"
+		exit
 	}
 		
 	** Generate Matrix of Regressors, shares, and outcome variable
@@ -128,6 +130,14 @@ program define ivreg_ss, eclass
 	}
 	mkmat `share_varlist', matrix(ln)						//Matrix of Shares
 	mkmat `dependant_var', matrix(tildeYn) 				//Dependent Variable   
+	
+	local num_counties = rowsof(ln)
+	local num_sector1  = colsof(ln)
+
+	if (`num_counties' < `num_sector1') {
+		display "ERROR: You have more number of sectors than regions"
+		exit
+	}
 	
 	** OLS Estimates
 	mat P1 = Mn' * Gn
@@ -171,11 +181,17 @@ program define ivreg_ss, eclass
 			
 			mat LambdaAKM = R_sq' * Xddd_sq
 		}
-		else {
-			preserve
-			
+		else {		
 			** Get list of share variables by cluster
 			use "`path_cluster'", clear
+			
+			qui sum `cluster_var'
+			local num_sector2 = r(N)
+			
+			if (`num_sector1' != `num_sector2') {
+				display "Error: The length of your cluster_var is different from the number of sectors"
+				exit
+			}
 			
 			mat e_ln = (e' * ln)'
 			svmat e_ln, names(e_ln)
@@ -185,8 +201,6 @@ program define ivreg_ss, eclass
 		
 			matrix opaccum A = e_ln, group(`cluster_var') opvar(Xddd)
 			mat LambdaAKM = A[1,1]
-	
-			restore
 		}
 		mat variance = 1/`hatpi'^2 * inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
 		local SE_AKM = sqrt(variance[1,1])
@@ -229,6 +243,14 @@ program define ivreg_ss, eclass
 		else {
 			** Get list of share variables by cluster
 			use "`path_cluster'", clear
+			
+			qui sum `cluster_var'
+			local num_sector2 = r(N)
+			
+			if (`num_sector1' != `num_sector2') {
+				display "Error: The length of your cluster_var is different from the number of sectors"
+				exit
+			}
 			
 			mat e_ln = (e_null' * ln)'
 			mat Xdd_ln = (Gdd' * ln)'
@@ -352,6 +374,7 @@ program define ivreg_ss, eclass
 			display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " "=(-Inf, Inf)"
 		}
 	}	
+
 	
 	** Save results for display
 	ereturn scalar b = `hat_beta'
