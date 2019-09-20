@@ -8,18 +8,17 @@
 {viewerjumpto "Referejce" "reg_ss##reference"}{...}
 {title:Title}
 
-{p2colset 5 18 24 2}{...}
+{p2colset 5 15 15 2}{...}
 {p2col :{hi: reg_ss} {hline 2}}Computes confidence intervals, standard errors, and p-values in a linear regression in which the regressor of interest has a shift-share structure. Several different inference methods can be computed.
 {p2colreset}{...}
 
 {marker syntax}{title:Syntax}
 
-{p 8 15 2}
+{p 4 15 2}
 {cmd:reg_ss}
-{depvar} 
-{cmd:,} {opt shiftshare_var(varlist)} 
-		{opt share_varlist(varlist)}  {opt alpha}
-		[control_varlist(varlist) weight_var(varlist) akmtype beta0 path_cluster cluster_var(varlist)]
+{depvar} {cmd:,}  {opt shiftshare_var(varlist)} 
+		{opt share_varlist(varlist)} 
+		[control_varlist(varlist) weight_var(varlist) akmtype beta0 path_cluster cluster_var(varlist) alpha]
 
 {marker Options}{...}
 {synoptset 29 tabbed}{...}
@@ -45,12 +44,30 @@ AKM or AKM0 confidence intervals and p-values accounting for sectoral clusters. 
 {synopt :{opt cluster_var}} The variable name of the cluster variable in the .dta file storing the cluster information corresponding to each sector. The order of 
 the sectors in this .dta file should be the same as the order of the sectors in the "varlist" containing the sector shares (the "share_varlist").{p_end}
 
+{marker Description}{...}
+{title:Note on collinear sectors}
+{pstd} Let W denote the share matrix with the (i,s) element given by w_is. Supppose that columns of W
+are collinear, so it that it has rank S_0 < S. Without loss of generality, suppose that the first S_0
+columns of the matrix are full rank, so that the collinearity is caused by the last S − S_0 sectors. In
+this case, it is not possible to recover, tilde(X)_s, the sectoral shifters with the controls partialled out, and
+the reg_ss and ivreg_ss functions will return an error message "Share matrix is collinear".
+The researcher can either (i) drop the collinear sectors (ii) aggregate the sectors, or (iii) if the 
+only controls are those with shift-share structure, and we have data on Zs, we can estimate tilde(X)_s by running a sector-level regression of Xs onto Zs
+, and taking the residual. This
+third option is not currently implemented in this package. Note that options (i) and (ii) change the
+definition of the estimand. Since they involve changing the shock vector X_i
+, this has to be done before using the reg_ss and ivreg_ss functions.{p_end}
+
+{marker Description}{...}
+{title:Note on Dataset Preparation}
+{pstd} Before running regressions using reg_ss, please make sure there are no missing values in all variables that you pass to the program. {p_end}
+
 {marker examples}{...}
 {title:Examples}
 The data for these examples may be downloaded from https://github.com/zhangxiang0822/ShiftShareSEStata/blob/master/data/ADH_derived.dta
 
 We use a subset of data from Autor, Dorn, and Hanson (2013, ADH) to illustrate the confidence intervals implemented in this package. Variables in ADH dataset are listed below.
-- d_sh_empl: Change in the share of working-age population
+- d_sh_empl: Change in the share of working-age population.
 - d_sh_empl_mfg: Change in the share of working-age population employed in manufacturing.
 - d_sh_empl_nmfg: Change in the share of working-age population employed in non-manufacturing.
 - d_tradeusch_pw: Change in sectoral U.S. imports from China normalized by U.S. total employment in the corresponding sector, aggregated to regional level. This is the variable of interest in ADH.
@@ -94,6 +111,20 @@ Be sure to put "sector_derived.dta" to your local path
 
 For more examples, please see "https://github.com/zhangxiang0822/BartikSEStata/blob/master/code/ADHapplication.do".
 
+{marker results}{...}
+{title:Stored results}
+
+{pstd}
+{cmd:reg_ss} stores the following in {cmd:e()}:
+
+{synoptset 20 tabbed}{...}
+{p2col 5 20 24 2: Scalars}{p_end}
+{synopt:{cmd:e(b)}}coefficient of the shift-share regressor {p_end}
+{synopt:{cmd:e(se)}}Estimated standard error of the shift-share regressor {p_end}
+{synopt:{cmd:e(CI_low)}}Lower bound of the estimated confidence interval {p_end}
+{synopt:{cmd:e(CI_upp)}}Upper bound of the estimated confidence interval {p_end}
+{synopt:{cmd:e(p)}}P-value of the null: beta = 0 {p_end}
+
 {marker author}{...}
 {title:Bug Reporting}
 {pstd}  Please, submit bugs, comments, and suggestions to the Github repository at "https://github.com/zhangxiang0822/BartikSEStata". You are free to open an issue.
@@ -115,7 +146,7 @@ For more examples, please see "https://github.com/zhangxiang0822/BartikSEStata/b
 
 {marker reference}{...}
 {title:Reference}
-{pstd} Adão, Rodrigo, Michal Kolesár, and Eduardo Morales (2019) “Shift-share Designs: Theory and Inference”. Quarterly Journal of Economics, forthcoming. {p_end}
+{pstd} Adão, Rodrigo, Michal Kolesár, and Eduardo Morales (2019) “Shift-share Designs: Theory and Inference”. Quarterly Journal of Economics, forthcoming. https://doi.org/10.1093/qje/qjz025 {p_end}
 
 {pstd} David, H., David Dorn, and Gordon H. Hanson (2013) "The China Syndrome: Local Llabor Market Effects of Import Ccompetition in the United States." American Economic Review, 103, no. 6,  (2013): 2121-2168.
  {p_end}

@@ -2,11 +2,12 @@
       name:  <unnamed>
        log:  D:\Dropbox\RA_Princeton\RA_Morales\BartikSEStata\output/logfiles/AKM.log
   log type:  text
- opened on:   1 Sep 2019, 15:26:06
+ opened on:  20 Sep 2019, 17:11:31
 
 . 
 . prog main
-  1.         **** AKM OLS examples   
+  1. 
+.         **** AKM OLS examples   
 .         * (1) AKM, no cluster
 .         timer on 1
   2.         use "data/ADH_derived.dta", clear
@@ -20,136 +21,129 @@
 .         replace t2 = 1 if t2 !=0
   7.         reg d_sh_empl_mfg d_tradeotch_pw_lag t2 l_shind_manuf_cbp reg_encen reg_escen
   8.         reg d_sh_empl_mfg c.d_tradeotch_pw_lag#i.t2 l_shind_manuf_cbp reg_encen reg_escen 
-  9.         
-.         use "data/ADH_derived.dta", clear
- 10.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
->                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
-> cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
->                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(1) path_cluster("data/sector_
-> derived_wrong.dta") cluster_var(sec_3d)
- 11.         /*
->         **** AKM OLS examples   
->         * (1) AKM, no cluster
->         timer on 1
->         use "data/ADH_derived.dta", clear
->         append using "data/ADH_derived.dta"
->         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
+  9.                          
+.         **** AKM OLS examples   
+.         * (1) AKM, no cluster
+.         timer on 1
+ 10.         use "data/ADH_derived.dta", clear
+ 11.         append using "data/ADH_derived.dta"
+ 12.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05)
->         timer off 1
->         timer list 1
-> 
->         * (2) AKM0, no cluster
->         timer on 2
->         use "data/ADH_derived.dta", clear
->         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
+ 13.         timer off 1
+ 14.         timer list 1
+ 15. 
+.         * (2) AKM0, no cluster
+.         timer on 2
+ 16.         use "data/ADH_derived.dta", clear
+ 17.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                          share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) 
->         timer off 2
->         timer list 2
-> 
->         * (3) AKM, cluster
->         timer on 3
->         use "data/ADH_derived.dta", clear
->         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
+ 18.         timer off 2
+ 19.         timer list 2
+ 20. 
+.         * (3) AKM, cluster
+.         timer on 3
+ 21.         use "data/ADH_derived.dta", clear
+ 22.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(1) path_cluster("data/sector_
 > derived.dta") cluster_var(sec_3d)
->         timer off 3
->         timer list 3
->         
->         * (4) AKM0, cluster
->         timer on 4
->         use "data/ADH_derived.dta", clear
->         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
+ 23.         timer off 3
+ 24.         timer list 3
+ 25.         
+.         * (4) AKM0, cluster
+.         timer on 4
+ 26.         use "data/ADH_derived.dta", clear
+ 27.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                          share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) path_cluster("data/sec
 > tor_derived.dta") cluster_var(sec_3d)
->         timer off 4
->         timer list 4
->         
->         **** AKM IV examples
->         * (1) AKM, no cluster
->         timer on 5
->         use "data/ADH_derived.dta", clear
->         
->         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
+ 28.         timer off 4
+ 29.         timer list 4
+ 30.         */
+.         **** AKM IV examples
+.         * (1) AKM, no cluster
+.         timer on 5
+ 31.         use "data/ADH_derived.dta", clear
+ 32.         
+.         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(1) 
->         timer off 5
->         timer list 5
->         
->         * (2) AKM0, no cluster
->         timer on 6
->         use "data/ADH_derived.dta", clear
->         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
+ 33.         timer off 5
+ 34.         timer list 5
+ 35. 
+.         * (2) AKM0, no cluster
+.         timer on 6
+ 36.         use "data/ADH_derived.dta", clear
+ 37.         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) beta0(0) 
->         timer off 6
->         timer list 6
->         
->         * (3) AKM, cluster
->         timer on 7
->         use "data/ADH_derived.dta", clear
->         
->         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
+ 38.         timer off 6
+ 39.         timer list 6
+ 40.         
+.         * (3) AKM, cluster
+.         timer on 7
+ 41.         use "data/ADH_derived.dta", clear
+ 42.         
+.         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(1) path_cluster("data/sector_
 > derived.dta") cluster_var(sec_3d) 
->         timer off 7
->         timer list 7
-> 
->         * (4) AKM0, no cluster
->         timer on 8
->         use "data/ADH_derived.dta", clear
->         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
+ 43.         timer off 7
+ 44.         timer list 7
+ 45. 
+.         * (4) AKM0, no cluster
+.         timer on 8
+ 46.         use "data/ADH_derived.dta", clear
+ 47.         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) beta0(0) path_cluster("dat
 > a/sector_derived.dta") cluster_var(sec_3d) 
->         timer off 8
->         timer list 8
->         
->         ** Use d_sh_empl as outcome
->         * (1) OLS AKM cluster
->         use "data/ADH_derived.dta", clear
->         reg_ss d_sh_empl, shiftshare_var(d_tradeotch_pw_lag) ///
+ 48.         timer off 8
+ 49.         timer list 8
+ 50.         
+.         ** Use d_sh_empl as outcome
+.         * (1) OLS AKM cluster
+.         use "data/ADH_derived.dta", clear
+ 51.         reg_ss d_sh_empl, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(1) path_cluster("data/sector_
 > derived.dta") cluster_var(sec_3d) 
->         
->         * (2） OLS AKM0 cluster
->         use "data/ADH_derived.dta", clear
->         reg_ss d_sh_empl, shiftshare_var(d_tradeotch_pw_lag) ///
+ 52.         
+.         * (2） OLS AKM0 cluster
+.         use "data/ADH_derived.dta", clear
+ 53.         reg_ss d_sh_empl, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) path_cluster("data/sector_
 > derived.dta") cluster_var(sec_3d) 
->                          
->         * (3) IV AKM cluster
->         use "data/ADH_derived.dta", clear
->         ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
+ 54.                          
+.         * (3) IV AKM cluster
+.         use "data/ADH_derived.dta", clear
+ 55.         ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(1) beta0(0) path_cluster("dat
 > a/sector_derived.dta") cluster_var(sec_3d) firststage(1)
-> 
->         * (4) IV AKM0 cluster
->         use "data/ADH_derived.dta", clear
->         ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
+ 56. 
+.         * (4) IV AKM0 cluster
+.         use "data/ADH_derived.dta", clear
+ 57.         ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) beta0(0) path_cluster("dat
 > a/sector_derived.dta") cluster_var(sec_3d) firststage(1)
->                          */
+ 58.                          
 . end
 
 . 

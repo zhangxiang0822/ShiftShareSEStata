@@ -115,10 +115,17 @@ program define ivreg_ss, eclass
 		local controls `r(varlist)'
 	}
 	else {
-		display "You must manually generate dummy variables, instead of using i.XXX"
+		display "Warning: You must manually generate dummy variables, instead of using i.XXX"
 		exit
 	}
-		
+	
+	_rmcoll `share_varlist', force
+	local num_omit_var = `r(k_omitted)'
+	if `num_omit_var' > 0 {
+		display "Error: You have collinear share variables (Share matrix has colinear columns)"
+		exit
+	}
+	
 	** Generate Matrix of Regressors, shares, and outcome variable
 	if ("`control_varlist'" ~= "") {
 		mkmat `shiftshare_iv' `controls', matrix(Mn) //Matrix of IVs
@@ -133,7 +140,7 @@ program define ivreg_ss, eclass
 	
 	local num_counties = rowsof(ln)
 	local num_sector1  = colsof(ln)
-
+	
 	if (`num_counties' < `num_sector1') {
 		display "ERROR: You have more number of sectors than regions"
 		exit
@@ -148,18 +155,17 @@ program define ivreg_ss, eclass
 	mat e = tildeYn - Gn * hat_theta
 	local hat_beta = hat_theta[1, 1]
 	
-	
 	** Auxiliary variables
 	mkmat `controls', matrix(tildeZn)
 	mkmat `shiftshare_iv', matrix(tildeXn)
 	mkmat `endogenous_var', matrix(tildeGn)
-
+	
 	mat A = tildeZn * inv(tildeZn'*tildeZn)
 	mat Xdd = tildeXn - A*(tildeZn'*tildeXn)
 	mat Ydd = tildeYn - A*(tildeZn'*tildeYn) 
 	mat Gdd = tildeGn - A*(tildeZn'*tildeGn)
 	mat Xddd = inv(ln'*ln) * (ln'*Xdd)
-
+	
 	** First stage coefficient
 	mat hat_thetaFS = inv(Mn'*Mn) * (Mn'*Gdd)
 	local hatpi = hat_thetaFS[1,1]
@@ -388,5 +394,4 @@ program define ivreg_ss, eclass
 	ereturn local CI_upp = `CI_upp'
 	ereturn local CI_low = `CI_low'
 	ereturn scalar p = `p'
-	*/
 end

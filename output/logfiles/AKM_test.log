@@ -2,7 +2,7 @@
       name:  <unnamed>
        log:  D:\Dropbox\RA_Princeton\RA_Morales\BartikSEStata\output/logfiles/AKM_test.log
   log type:  text
- opened on:   1 Sep 2019, 16:01:27
+ opened on:  20 Sep 2019, 13:10:38
 
 . 
 . /*
@@ -12,388 +12,401 @@
 > */
 . 
 . prog main       
-  1.         use "data/czmig_empshares_96_14.dta", clear
-  2.         reg_ss y_out_tot1, shiftshare_var(adh) share_varlist(empshare1-empshare901) weight_var(cz_weight)
-  3.         
-.         use "data/czmig_empshares_96_14.dta", clear
-  4.         expand 2
-  5.         reg_ss y_out_tot1, shiftshare_var(adh) share_varlist(empshare1-empshare901) weight_var(cz_weight)
-  6.         
-.         use "data/ADH_derived.dta", clear
-  7.         ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
->                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
-> cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
->                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) path_cluster("data/sector_
-> derived_wrong.dta") cluster_var(sec_3d)
-  8.                          
+  1. 
 .         * c1
 .         use "data/ADH_derived.dta", clear
-  9.         reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
+  2.         reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) path_cluster("data/sector_derived.dta") cluster_v
 > ar(sec_3d)
- 10. 
+  3. 
 .         local p_c1_akm = `e(p)'
- 11.         local ci_c1_low_akm = `e(CI_low)'
- 12.         local ci_c1_upp_akm = `e(CI_upp)'
- 13. 
+  4.         local ci_c1_low_akm = `e(CI_low)'
+  5.         local ci_c1_upp_akm = `e(CI_upp)'
+  6. 
 .         use "data/ADH_derived.dta", clear
- 14.         reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
+  7.         reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) path_cluster("data/sector_
 > derived.dta") cluster_var(sec_3d)
- 15.         
+  8.         
 .         local c1_coef = `e(b)'
- 16.         local p_c1_akm0 = `e(p)'
- 17.         local ci_c1_low_akm0 = `e(CI_low)'
- 18.         local ci_c1_upp_akm0 = `e(CI_upp)'
- 19.         
+  9.         local p_c1_akm0 = `e(p)'
+ 10.         local ci_c1_low_akm0 = `e(CI_low)'
+ 11.         local ci_c1_upp_akm0 = `e(CI_upp)'
+ 12.         
 .         * c3
 .         use "data/ADH_derived.dta", clear
- 20.         reg_ss d_sh_empl, shiftshare_var(d_tradeotch_pw_lag) ///
+ 13.         reg_ss d_sh_empl, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) path_cluster("data/sector_derived.dta
 > ") cluster_var(sec_3d)
- 21.         
+ 14.         
 .         local p_c3_akm = `e(p)'
- 22.         local ci_c3_low_akm = `e(CI_low)'
- 23.         local ci_c3_upp_akm = `e(CI_upp)'
- 24.         
+ 15.         local ci_c3_low_akm = `e(CI_low)'
+ 16.         local ci_c3_upp_akm = `e(CI_upp)'
+ 17.         
 .         use "data/ADH_derived.dta", clear
- 25.         reg_ss d_sh_empl, shiftshare_var(d_tradeotch_pw_lag) ///
+ 18.         reg_ss d_sh_empl, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) path_cluster("data/sector_
 > derived.dta") cluster_var(sec_3d)
- 26.         
+ 19.         
 .         local c3_coef = `e(b)'
- 27.         local p_c3 = `e(p)'
- 28.         local p_c3_akm0 = `e(p)'
- 29.         local ci_c3_low_akm0 = `e(CI_low)'
- 30.         local ci_c3_upp_akm0 = `e(CI_upp)'
- 31.         
+ 20.         local p_c3 = `e(p)'
+ 21.         local p_c3_akm0 = `e(p)'
+ 22.         local ci_c3_low_akm0 = `e(CI_low)'
+ 23.         local ci_c3_upp_akm0 = `e(CI_upp)'
+ 24. 
 .         * c5
 .         use "data/ADH_derived.dta", clear
- 32.         ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
+ 25.         ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) path_cluster("data/sector_derived.dta
 > ") cluster_var(sec_3d)
- 33.         
+ 26. 
 .         local p_c5_akm = `e(p)'
- 34.         local ci_c5_low_akm = `e(CI_low)'
- 35.         local ci_c5_upp_akm = `e(CI_upp)'
- 36.         
+ 27.         local ci_c5_low_akm = `e(CI_low)'
+ 28.         local ci_c5_upp_akm = `e(CI_upp)'
+ 29.         
 .         use "data/ADH_derived.dta", clear
- 37.         ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
+ 30.         ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) path_cluster("data/sector_
 > derived.dta") cluster_var(sec_3d)
- 38.         
+ 31.         
 .         local c5_coef = `e(b)'
- 39.         local p_c5 = `e(p)'
- 40.         local p_c5_akm0 = `e(p)'
- 41.         local ci_c5_low_akm0 = `e(CI_low)'
- 42.         local ci_c5_upp_akm0 = `e(CI_upp)'
- 43.                          
+ 32.         local p_c5 = `e(p)'
+ 33.         local p_c5_akm0 = `e(p)'
+ 34.         local ci_c5_low_akm0 = `e(CI_low)'
+ 35.         local ci_c5_upp_akm0 = `e(CI_upp)'
+ 36.                  
 .         * b1
 .         use "data/ADH_derived.dta", clear
- 44.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
+ 37.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) path_cluster("data/sector_derived.dta
 > ") cluster_var(sec_3d)
- 45.                  
+ 38.                  
 .         * b3
 .         use "data/ADH_derived.dta", clear
- 46.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
+ 39.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) path_cluster("data/sector_derived.dta
 > ") cluster_var(sec_3d)
- 47.         
+ 40.         
 .         use "data/ADH_derived.dta", clear
- 48.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
+ 41.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) path_cluster("data/sector_
 > derived.dta") cluster_var(sec_3d)
- 49.         
+ 42.         
 .         local p_b3 = `e(p)'
- 50.         
+ 43.         
 .         * b5
 .         use "data/ADH_derived.dta", clear
- 51.         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
+ 44.         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) path_cluster("data/sector_derived.dta
 > ") cluster_var(sec_3d)
- 52.         
+ 45.         
 .         use "data/ADH_derived.dta", clear
- 53.         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
+ 46.         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) path_cluster("data/sector_
 > derived.dta") cluster_var(sec_3d)
- 54.         
+ 47.         
 .         local p_b5 = `e(p)'
- 55.         
+ 48.         
 .         * a1
 .         use "data/ADH_derived.dta", clear
- 56.         reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
+ 49.         reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) 
- 57.         
+ 50.         
 .         local p_a1_akm = `e(p)'
- 58.         local ci_a1_low_akm = `e(CI_low)'
- 59.         local ci_a1_upp_akm = `e(CI_upp)'
- 60.         
+ 51.         local ci_a1_low_akm = `e(CI_low)'
+ 52.         local ci_a1_upp_akm = `e(CI_upp)'
+ 53.         
 .         use "data/ADH_derived.dta", clear
- 61.         reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
+ 54.         reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) 
- 62.         
+ 55.         
 .         local a1_coef = `e(b)'
- 63.         local p_a1_akm0 = `e(p)'
- 64.         local ci_a1_low_akm0 = `e(CI_low)'
- 65.         local ci_a1_upp_akm0 = `e(CI_upp)'
- 66.         
+ 56.         local p_a1_akm0 = `e(p)'
+ 57.         local ci_a1_low_akm0 = `e(CI_low)'
+ 58.         local ci_a1_upp_akm0 = `e(CI_upp)'
+ 59.         
 .         * a3 
 .         use "data/ADH_derived.dta", clear
- 67.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
+ 60.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) 
- 68.         
+ 61.         
 .         local p_a3_akm = `e(p)'
- 69.         local ci_a3_low_akm = `e(CI_low)'
- 70.         local ci_a3_upp_akm = `e(CI_upp)'
- 71.         
+ 62.         local ci_a3_low_akm = `e(CI_low)'
+ 63.         local ci_a3_upp_akm = `e(CI_upp)'
+ 64.         
 .         use "data/ADH_derived.dta", clear
- 72.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
+ 65.         reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) 
- 73.                          
+ 66.                          
 .         local p_a3 = `e(p)'
- 74.         local p_a3_akm0 = `e(p)'
- 75.         local ci_a3_low_akm0 = `e(CI_low)'
- 76.         local ci_a3_upp_akm0 = `e(CI_upp)'
- 77.         
+ 67.         local p_a3_akm0 = `e(p)'
+ 68.         local ci_a3_low_akm0 = `e(CI_low)'
+ 69.         local ci_a3_upp_akm0 = `e(CI_upp)'
+ 70.         
 .         * a5
 .         use "data/ADH_derived.dta", clear
- 78.         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
+ 71.         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) 
- 79.         
+ 72.         
 .         local p_a5_akm = `e(p)'
- 80.         local ci_a5_low_akm = `e(CI_low)'
- 81.         local ci_a5_upp_akm = `e(CI_upp)'
- 82.         
+ 73.         local ci_a5_low_akm = `e(CI_low)'
+ 74.         local ci_a5_upp_akm = `e(CI_upp)'
+ 75.         
 .         
 .         use "data/ADH_derived.dta", clear
- 83.         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
+ 76.         ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wn
 > cen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) 
- 84.         
+ 77.         
 .         local p_a5 = `e(p)'
- 85.         local p_a5_akm0 = `e(p)'
- 86.         local ci_a5_low_akm0 = `e(CI_low)'
- 87.         local ci_a5_upp_akm0 = `e(CI_upp)'
- 88.         
+ 78.         local p_a5_akm0 = `e(p)'
+ 79.         local ci_a5_low_akm0 = `e(CI_low)'
+ 80.         local ci_a5_upp_akm0 = `e(CI_upp)'
+ 81.         
 .         ** Test
 .         ** (1) b3 p-value = b5 p-value
 .         display ""
- 89.         display "b3 and b5 AKM0 p-value equal"
- 90.         display `p_b3'
- 91.         display `p_b5'
- 92.         
+ 82.         display "b3 and b5 AKM0 p-value equal"
+ 83.         display `p_b3'
+ 84.         display `p_b5'
+ 85.         
 .         ** (2) c3 p-value = c5 p-value
 .         display ""
- 93.         display "c3 and c5 AKM0 p-value equal"
- 94.         display `p_c3'
- 95.         display `p_c5'
- 96.         
+ 86.         display "c3 and c5 AKM0 p-value equal"
+ 87.         display `p_c3'
+ 88.         display `p_c5'
+ 89.         
 .         ** (3) a3 p-value = a5 p-value
 .         display ""
- 97.         display "a3 and a5 AKM0 p-value equal"
- 98.         display `p_a3'
- 99.         display `p_a5'
-100.         
+ 90.         display "a3 and a5 AKM0 p-value equal"
+ 91.         display `p_a3'
+ 92.         display `p_a5'
+ 93.         
 .         ** (4) a3 and b3 results identical
 .         ** (5) b5 and a5 results identical
 .         ** (6) Check c1-c3 coefficient
 .         display ""
-101.         display "Check c1-c3 coefficient"
-102.         display "Expected value: 0.631040938185757, -0.488568717122902, -0.774226658776735"
-103.         display "Realized Value: `c1_coef', `c3_coef', `c5_coef' "
-104.         
+ 94.         display "Check c1-c3 coefficient"
+ 95.         display "Expected value: 0.631040938185757, -0.488568717122902, -0.774226658776735"
+ 96.         display "Realized Value: `c1_coef', `c3_coef', `c5_coef' "
+ 97.         
 .         ** (7) c1 coefficient equals to a1 coefficient
 .         display ""
-105.         display "c1 coefficient equals to a1 coefficient"
-106.         display "`c1_coef' = `a1_coef'"
-107.         
+ 98.         display "c1 coefficient equals to a1 coefficient"
+ 99.         display "`c1_coef' = `a1_coef'"
+100.         
 .         ** (8) c1 and a1 p-value, CI-low, and CI-upp 
 .         display ""
-108.         display "c1 and a1 p-value, CI-low, and CI-upp"
-109.         display "Expected value: 0, 0.001282890950014, 0, 0.000056519706974"
-110.     display "Realized value: `p_c1_akm', `p_c1_akm0', `p_a1_akm', `p_a1_akm0'"
-111.         
+101.         display "c1 and a1 p-value, CI-low, and CI-upp"
+102.         display "Expected value: 0, 0.001282890950014, 0, 0.000056519706974"
+103.     display "Realized value: `p_c1_akm', `p_c1_akm0', `p_a1_akm', `p_a1_akm0'"
+104.         
 .         display ""
-112.         display "Expected value: 0.527240172127609, 0.537570958010291, 0.495188795569771, 0.522017706924849"
-113.     display "Realized value: `ci_c1_low_akm', `ci_c1_low_akm0', `ci_a1_low_akm', `ci_a1_low_akm0'"
-114.         
+105.         display "Expected value: 0.527240172127609, 0.537570958010291, 0.495188795569771, 0.522017706924849"
+106.     display "Realized value: `ci_c1_low_akm', `ci_c1_low_akm0', `ci_a1_low_akm', `ci_a1_low_akm0'"
+107.         
 .         display ""
-115.         display "Expected value: 0.734841704243901, 0.838282656411893, 0.766893080801748, 0.889797428206052"
-116.     display "Realized value: `ci_c1_upp_akm', `ci_c1_upp_akm0', `ci_a1_upp_akm', `ci_a1_upp_akm0'"
-117.         
+108.         display "Expected value: 0.734841704243901, 0.838282656411893, 0.766893080801748, 0.889797428206052"
+109.     display "Realized value: `ci_c1_upp_akm', `ci_c1_upp_akm0', `ci_a1_upp_akm', `ci_a1_upp_akm0'"
+110.         
 .         ** (9) c3 and a3 p-value, CI-low, and CI-upp 
 .         display ""
-118.         display "c3 and a3 p-value, CI-low, and CI-upp"
-119.         display "Expected value: 0.002924641237718, 0.000421803253836, 0.000000150063370, 0.000090458689727"
-120.     display "Realized value: `p_c3_akm', `p_c3_akm0', `p_a3_akm', `p_a3_akm0'"
-121.         
+111.         display "c3 and a3 p-value, CI-low, and CI-upp"
+112.         display "Expected value: 0.002924641237718, 0.000421803253836, 0.000000150063370, 0.000090458689727"
+113.     display "Realized value: `p_c3_akm', `p_c3_akm0', `p_a3_akm', `p_a3_akm0'"
+114.         
 .         display ""
-122.         display "Expected value: -0.810383925354586, -1.236885319089530, -0.516754284756085, -0.629980318872062"
-123.     display "Realized value: `ci_c3_low_akm', `ci_c3_low_akm0', `ci_a3_low_akm', `ci_a3_low_akm0'"
-124.         
+115.         display "Expected value: -0.810383925354586, -1.236885319089530, -0.516754284756085, -0.629980318872062"
+116.     display "Realized value: `ci_c3_low_akm', `ci_c3_low_akm0', `ci_a3_low_akm', `ci_a3_low_akm0'"
+117.         
 .         display ""
-125.         display "Expected value: -0.166753508891236, -0.239754057137763, -0.235900929361803, -0.257494610447470"
-126.     display "Realized value: `ci_c3_upp_akm', `ci_c3_upp_akm0', `ci_a3_upp_akm', `ci_a3_upp_akm0'"
-127.         
+118.         display "Expected value: -0.166753508891236, -0.239754057137763, -0.235900929361803, -0.257494610447470"
+119.     display "Realized value: `ci_c3_upp_akm', `ci_c3_upp_akm0', `ci_a3_upp_akm', `ci_a3_upp_akm0'"
+120.         
 .         ** (10) c5 and a5 p-value, CI-low, and CI-upp 
 .         display ""
-128.         display "c5 and a5 p-value, CI-low, and CI-upp"
-129.         display "Expected value: 0.001277718157450, 0.000421803253837, 0.000000051567025, 0.000090458689726"
-130.     display "Realized value: `p_c5_akm', `p_c5_akm0', `p_a5_akm', `p_a5_akm0'"
-131.         
+121.         display "c5 and a5 p-value, CI-low, and CI-upp"
+122.         display "Expected value: 0.001277718157450, 0.000421803253837, 0.000000051567025, 0.000090458689726"
+123.     display "Realized value: `p_c5_akm', `p_c5_akm0', `p_a5_akm', `p_a5_akm0'"
+124.         
 .         display ""
-132.         display "Expected value: -1.245349169792894, -1.690324047107167, -0.810991466572728, -0.891427381124374"
-133.     display "Realized value: ``ci_c5_low_akm', `ci_c5_low_akm0', `ci_a5_low_akm', `ci_a5_low_akm0'"
-134.         
+125.         display "Expected value: -1.245349169792894, -1.690324047107167, -0.810991466572728, -0.891427381124374"
+126.     display "Realized value: ``ci_c5_low_akm', `ci_c5_low_akm0', `ci_a5_low_akm', `ci_a5_low_akm0'"
+127.         
 .         display ""
-135.         display "Expected value: -0.303104147760458, -0.389313219498141, -0.381728638531380, -0.391771441695858"
-136.     display "Realized value: ``ci_c5_upp_akm', `ci_c5_upp_akm0', `ci_a5_upp_akm', `ci_a5_upp_akm0'"
-137. 
+128.         display "Expected value: -0.303104147760458, -0.389313219498141, -0.381728638531380, -0.391771441695858"
+129.     display "Realized value: ``ci_c5_upp_akm', `ci_c5_upp_akm0', `ci_a5_upp_akm', `ci_a5_upp_akm0'"
+130. 
 .         ** Test_that: Weak IV
 .         ** iv0  
 .         use "data/ADH_derived.dta", clear
-138.         gen division =  2*reg_midatl + 3*reg_encen + 4*reg_wncen + 5*reg_satl+ 6*reg_escen + 7*reg_wscen + 8*reg_mount + 9 * 
+131.         gen division =  2*reg_midatl + 3*reg_encen + 4*reg_wncen + 5*reg_satl+ 6*reg_escen + 7*reg_wscen + 8*reg_mount + 9 * 
 > reg_pacif
-139.         keep if division < 8
-140.         
+132.         keep if division < 8
+133.         
 .         forvalues i = 1(1)7 {
-141.                 gen division`i' = (division == `i')
-142.         }
-143. 
+134.                 gen division`i' = (division == `i')
+135.         }
+136. 
 .         local control_varlist t2 l_shind_manuf_cbp l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource divis
 > ion1-division7
-144.         
+137.         
 .         ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) ///
 >                                                 shiftshare_iv(d_tradeotch_pw_lag) ///
 >                                                 control_varlist(`control_varlist') ///
 >                                                 share_varlist(emp_share1-emp_share770) ///
 >                                                 alpha(0.05) akmtype(0) 
-145.                                                 
+138.                                                 
 .         local se_iv0 = `e(se)'
-146.         
+139.         
 .         ** iv1
 .         use "data/ADH_derived.dta", clear
-147.         gen division =  2*reg_midatl + 3*reg_encen + 4*reg_wncen + 5*reg_satl+ 6*reg_escen + 7*reg_wscen + 8*reg_mount + 9 * 
+140.         gen division =  2*reg_midatl + 3*reg_encen + 4*reg_wncen + 5*reg_satl+ 6*reg_escen + 7*reg_wscen + 8*reg_mount + 9 * 
 > reg_pacif
-148.         keep if division < 7
-149.         
+141.         keep if division < 7
+142.         
 .         forvalues i = 1(1)6 {
-150.                 gen division`i' = (division == `i')
-151.         }
-152.         local control_varlist t2 l_shind_manuf_cbp l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource di
+143.                 gen division`i' = (division == `i')
+144.         }
+145.         local control_varlist t2 l_shind_manuf_cbp l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource di
 > vision1-division6
-153.         
+146.         
 .         ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(`control_varlist') ///
 >                      share_varlist(emp_share1-emp_share770) alpha(0.05) akmtype(0) 
-154. 
+147. 
 .         local se_iv0 = `e(se)'
-155. 
+148. 
 .         ** iv2
 .         use "data/ADH_derived.dta", clear
-156.         gen division =  2*reg_midatl + 3*reg_encen + 4*reg_wncen + 5*reg_satl+ 6*reg_escen + 7*reg_wscen + 8*reg_mount + 9 * 
+149.         gen division =  2*reg_midatl + 3*reg_encen + 4*reg_wncen + 5*reg_satl+ 6*reg_escen + 7*reg_wscen + 8*reg_mount + 9 * 
 > reg_pacif
-157.         keep if division < 6
-158.         
+150.         keep if division < 6
+151.         
 .         forvalues i = 1(1)5 {
-159.                 gen division`i' = (division == `i')
-160.         }
-161.         local control_varlist t2 l_shind_manuf_cbp l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource di
+152.                 gen division`i' = (division == `i')
+153.         }
+154.         local control_varlist t2 l_shind_manuf_cbp l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource di
 > vision1-division5
-162.         
+155.         
 .         ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 >                          control_varlist(`control_varlist') ///
 >                      share_varlist(emp_share1-emp_share770) alpha(0.05) akmtype(0) 
-163. 
+156. 
 .         * r0
 .         use "data/ADH_derived.dta", clear
-164.         gen division =  2*reg_midatl + 3*reg_encen + 4*reg_wncen + 5*reg_satl+ 6*reg_escen + 7*reg_wscen + 8*reg_mount + 9 * 
+157.         gen division =  2*reg_midatl + 3*reg_encen + 4*reg_wncen + 5*reg_satl+ 6*reg_escen + 7*reg_wscen + 8*reg_mount + 9 * 
 > reg_pacif
-165.         keep if division >4
-166.         
+158.         keep if division >4
+159.         
 .         forvalues i = 5(1)9 {
-167.                 gen division`i' = (division == `i')
-168.         }
-169.         local control_varlist t2 l_shind_manuf_cbp reg_encen reg_midatl reg_satl reg_wncen l_sh_popedu_c l_sh_popfborn l_sh_e
+160.                 gen division`i' = (division == `i')
+161.         }
+162.         local control_varlist t2 l_shind_manuf_cbp reg_encen reg_midatl reg_satl reg_wncen l_sh_popedu_c l_sh_popfborn l_sh_e
 > mpl_f l_sh_routine33 l_task_outsource division5-division9
-170.         
+163.         
 .         reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(`control_varlist') ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) 
-171. 
+164. 
 .         * r1
 .         use "data/ADH_derived.dta", clear
-172.         gen division =  2*reg_midatl + 3*reg_encen + 4*reg_wncen + 5*reg_satl+ 6*reg_escen + 7*reg_wscen + 8*reg_mount + 9 * 
+165.         gen division =  2*reg_midatl + 3*reg_encen + 4*reg_wncen + 5*reg_satl+ 6*reg_escen + 7*reg_wscen + 8*reg_mount + 9 * 
 > reg_pacif
-173.         keep if division > 4
-174.         
+166.         keep if division > 4
+167.         
 .         forvalues i = 5(1)9 {
-175.                 gen division`i' = (division == `i')
-176.         }
-177.         local control_varlist t2 l_shind_manuf_cbp reg_encen reg_midatl reg_satl reg_wncen l_sh_popedu_c l_sh_popfborn l_sh_e
+168.                 gen division`i' = (division == `i')
+169.         }
+170.         local control_varlist t2 l_shind_manuf_cbp reg_encen reg_midatl reg_satl reg_wncen l_sh_popedu_c l_sh_popfborn l_sh_e
 > mpl_f l_sh_routine33 l_task_outsource division5-division9
-178. 
+171. 
 .         reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(`control_varlist') ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.045) akmtype(0) 
-179.         
+172.         
 .         * r2
 .         use "data/ADH_derived.dta", clear
-180.         gen division =  2*reg_midatl + 3*reg_encen + 4*reg_wncen + 5*reg_satl+ 6*reg_escen + 7*reg_wscen + 8*reg_mount + 9 * 
+173.         gen division =  2*reg_midatl + 3*reg_encen + 4*reg_wncen + 5*reg_satl+ 6*reg_escen + 7*reg_wscen + 8*reg_mount + 9 * 
 > reg_pacif
-181.         keep if division <6
-182.         
+174.         keep if division <6
+175.         
 .         forvalues i = 1(1)5 {
-183.                 gen division`i' = (division == `i')
-184.         }
-185.         
+176.                 gen division`i' = (division == `i')
+177.         }
+178.         
 .         local control_varlist t2 l_shind_manuf_cbp l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource divis
 > ion1-division5
-186. 
+179. 
 .         reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(`control_varlist') ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0)
-187.         
+180.         
 .         drop constant Xdd* R_* ln*
-188.         _rmcoll emp_share*
-189.         reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
+181.         _rmcoll emp_share*
+182.         reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
 >                          control_varlist(`control_varlist') ///
 >                      share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0)
-190. end
+183.         */               
+.         ** Test Using Data not Publicly Available
+.         
+.         use "data/czmig_empshares_96_14.dta", clear
+184.         reg_ss y_out_tot1, shiftshare_var(adh) share_varlist(empshare1-empshare901) weight_var(cz_weight)
+185.         
+.         use "data/czmig_empshares_96_14.dta", clear
+186.         expand 2
+187.         reg_ss y_out_tot1, shiftshare_var(adh) share_varlist(empshare1-empshare901) weight_var(cz_weight)
+188.         
+.         use "data/bartik_test_data.dta", clear
+189.         
+.         foreach var of varlist w2011-w3999 {
+190.                 qui replace `var' = 0 if mi(`var')
+191.                 egen row_total`var' = total(`var')
+192.                 
+.                 if row_total`var' == 0 {
+193.                         drop `var' row_total`var'
+194.                 }
+195.                 else {
+196.                         drop row_total`var'
+197.                 }
+198.         }
+199. 
+.         reg_ss dlogvehicles, shiftshare_var(tradeshockOTH) share_varlist(w2011-w3999)
+200.         
+. end
 
 . 
 . cap log close

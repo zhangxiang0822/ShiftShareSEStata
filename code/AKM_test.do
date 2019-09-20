@@ -15,18 +15,7 @@ R version test can be found at:
 */
 
 prog main	
-	use "data/czmig_empshares_96_14.dta", clear
-	reg_ss y_out_tot1, shiftshare_var(adh) share_varlist(empshare1-empshare901) weight_var(cz_weight)
-	
-	use "data/czmig_empshares_96_14.dta", clear
-	expand 2
-	reg_ss y_out_tot1, shiftshare_var(adh) share_varlist(empshare1-empshare901) weight_var(cz_weight)
-	
-	use "data/ADH_derived.dta", clear
-	ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
-			 control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
-		     share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0) path_cluster("data/sector_derived_wrong.dta") cluster_var(sec_3d)
-			 
+
 	* c1
 	use "data/ADH_derived.dta", clear
 	reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
@@ -67,13 +56,13 @@ prog main
 	local p_c3_akm0 = `e(p)'
 	local ci_c3_low_akm0 = `e(CI_low)'
 	local ci_c3_upp_akm0 = `e(CI_upp)'
-	
+
 	* c5
 	use "data/ADH_derived.dta", clear
 	ivreg_ss d_sh_empl, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
 			 control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 		     share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) path_cluster("data/sector_derived.dta") cluster_var(sec_3d)
-	
+
 	local p_c5_akm = `e(p)'
 	local ci_c5_low_akm = `e(CI_low)'
 	local ci_c5_upp_akm = `e(CI_upp)'
@@ -88,7 +77,7 @@ prog main
 	local p_c5_akm0 = `e(p)'
 	local ci_c5_low_akm0 = `e(CI_low)'
 	local ci_c5_upp_akm0 = `e(CI_upp)'
-			 
+		 
 	* b1
 	use "data/ADH_derived.dta", clear
 	reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
@@ -354,6 +343,32 @@ prog main
 	reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
 			 control_varlist(`control_varlist') ///
 		     share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0)
+			 
+	** Test Using Data not Publicly Available
+	/*
+	use "data/czmig_empshares_96_14.dta", clear
+	reg_ss y_out_tot1, shiftshare_var(adh) share_varlist(empshare1-empshare901) weight_var(cz_weight)
+	
+	use "data/czmig_empshares_96_14.dta", clear
+	expand 2
+	reg_ss y_out_tot1, shiftshare_var(adh) share_varlist(empshare1-empshare901) weight_var(cz_weight)
+	
+	use "data/bartik_test_data.dta", clear
+	
+	foreach var of varlist w2011-w3999 {
+		qui replace `var' = 0 if mi(`var')
+		egen row_total`var' = total(`var')
+		
+		if row_total`var' == 0 {
+			drop `var' row_total`var'
+		}
+		else {
+			drop row_total`var'
+		}
+	}
+
+	reg_ss dlogvehicles, shiftshare_var(tradeshockOTH) share_varlist(w2011-w3999)
+	*/
 end
 
 cap log close

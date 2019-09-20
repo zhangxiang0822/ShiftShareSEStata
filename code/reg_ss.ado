@@ -92,6 +92,13 @@ program define reg_ss, eclass
 		exit
 	}
 	
+	_rmcoll `share_varlist', force
+	local num_omit_var = `r(k_omitted)'
+	if `num_omit_var' > 0 {
+		display "Error: You have collinear share variables (Share matrix has colinear columns)"
+		exit
+	}
+	
 	** Generate Matrix of Regressors, shares, and outcome variable
 	mkmat `shiftshare_var' `controls', matrix(Mn)   //Matrix of regressors
 	mkmat `share_varlist', matrix(ln)				//Matrix of Shares
