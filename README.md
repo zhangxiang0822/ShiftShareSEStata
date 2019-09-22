@@ -14,6 +14,6 @@ In the near future, you will be able to directly install the packages from Stata
 # Sample Code and Examples
 In `code/ADHapplication.do`, we provide several examples on how to use the `reg_ss` and `ivreg_ss` to estimate linear regressions in which the regressor of interest/IV has a shift-share structure. To successfully run those codes, you may want to download the dataset needed from the `data` folder. The two datasets we use to produce results are `ADH_derived.dta` and `dector_derived.dta`.
 
-# Bur reporting and Questions
+# Bug reporting and Questions
 You're welcomed to open issues and leave messages in the `Issues` section to report bugs or ask questions. 
 
