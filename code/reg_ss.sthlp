@@ -28,7 +28,7 @@
 {p2coldent:* {opt shiftshare_var(varlist)}} Shift-share regressor of interest. {p_end}
 {p2coldent:* {opt share_varlist(varlist)}} List of variables containing the sector shares. Each variable indicates the regional shares corresponding to the particular sector. 
 Varlist must contain as many variables as there are sectors in the analysis. {p_end}
-{p2coldent:* {opt alpha}} Determines confidence level of reported confidence intervals, which will have coverate 1-alpha. Its default value  is 0.05. {p_end}
+{p2coldent:* {opt alpha}} Determines confidence level of reported confidence intervals, which will have coverage 1-alpha. Its default value  is 0.05. {p_end}
 
 {synoptline}
 {syntab:Other}
@@ -39,14 +39,13 @@ Adão, Kolesár, and Morales (2019). If it equals 0, "reg_ss" applies the AKM0 i
 reported standard error corresponds to the normalized standard error, given by the length of the corresponding confidence interval divided by 2*z(1-alpha/2). The default akmtype value 
 is 1. {p_end}
 {synopt :{opt beta0 }} Null that is tested when "akmtype" equals 0 (only affects reported p-values). {p_end}
-{synopt :{opt path_cluster}} The path to the .dta file which stores the cluster information corresponding to each sector. Provide this path if you want to compute 
-AKM or AKM0 confidence intervals and p-values accounting for sectoral clusters. {p_end}
+{synopt :{opt path_cluster}} The path to the .dta file which stores the cluster information corresponding to each sector. Provide this path if you want to account for sectoral clusters. {p_end}
 {synopt :{opt cluster_var}} The variable name of the cluster variable in the .dta file storing the cluster information corresponding to each sector. The order of 
 the sectors in this .dta file should be the same as the order of the sectors in the "varlist" containing the sector shares (the "share_varlist").{p_end}
 
 {marker Description}{...}
 {title:Note on collinear sectors}
-{pstd} Let W denote the share matrix with the (i,s) element given by w_is. Supppose that columns of W
+{pstd} Let W denote the share matrix with the (i,s) element given by w_is. Suppose that columns of W
 are collinear, so it that it has rank S_0 < S. Without loss of generality, suppose that the first S_0
 columns of the matrix are full rank, so that the collinearity is caused by the last S − S_0 sectors. In
 this case, it is not possible to recover, tilde(X)_s, the sectoral shifters with the controls partialled out, and
@@ -66,23 +65,24 @@ definition of the estimand. Since they involve changing the shock vector X_i
 {title:Examples}
 The data for these examples may be downloaded from https://github.com/zhangxiang0822/ShiftShareSEStata/blob/master/data/ADH_derived.dta
 
-We use a subset of data from Autor, Dorn, and Hanson (2013, ADH) to illustrate the confidence intervals implemented in this package. Variables in ADH dataset are listed below.
+We use a subset of data from Autor, Dorn, and Hanson (2013, ADH) to illustrate the confidence intervals implemented in this package. The variables in the ADH dataset are listed below.
 - d_sh_empl: Change in the share of working-age population.
 - d_sh_empl_mfg: Change in the share of working-age population employed in manufacturing.
 - d_sh_empl_nmfg: Change in the share of working-age population employed in non-manufacturing.
 - d_tradeusch_pw: Change in sectoral U.S. imports from China normalized by U.S. total employment in the corresponding sector, aggregated to regional level. This is the variable of interest in ADH.
-- d_tradeotch_pw_lag: Change in sectoral imports from China by rest of the world, aggregated to regional level.
-- emp_share1 - emp_share770: The local employment share for the first to the 770th sector.
-- weight: Regression weights corresponding to start of period CZ share of national populations.
+- d_tradeotch_pw_lag: Change in sectoral imports from China by by A Set Of High-Income countries other than the Us normalized by beginning-of-the period U.S. 
+total employment in the corresponding sector, aggregated to the regional level. This is the intrumental variable in ADH.
+- emp_share1 - emp_share770: The local employment share by region from the first to the 770th sector.
+- weight: Start-of-period share of U.S. population in each commuting zone (CZ).
 - state: State FIPS code.
-- czone: CZ number.
-- t2: Indicator for 2000-2007.
-- l_shind_manuf_cbp: Employment share of manufacturing.
-- l_sh_popedu_c: percent population college-educated.
-- l_sh_popfborn: percent population foreign-born.
-- l_sh_empl_f: percent employment among women.
-- l_sh_routine33: percent employment in routine occupations.
-- l_task_outsource: Offshorability index of occupations in CZ.
+- czone: CZ identification number.
+- t2: Indicator for the period 2000-2007, which corresponds to the second period in the sample.
+- l_shind_manuf_cbp: Manufacturing employment share in each CZ (in percentage terms).
+- l_sh_popedu_c: College-educated population share in each CZ (in percentage terms).
+- l_sh_popfborn: Foreign-born population share in each CZ (in percentage terms).
+- l_sh_empl_f: Female employment share in each CZ (in percentage terms).
+- l_sh_routine33: Share of employment in routine occupations in each CZ (in percentage terms).
+- l_task_outsource: Offshorability index of occupations in each CZ.
 
 Example 1: AKM, no cluster
 {phang2}{cmd:. 	use "data/ADH_derived.dta", clear }{p_end}
@@ -119,11 +119,11 @@ For more examples, please see "https://github.com/zhangxiang0822/BartikSEStata/b
 
 {synoptset 20 tabbed}{...}
 {p2col 5 20 24 2: Scalars}{p_end}
-{synopt:{cmd:e(b)}}coefficient of the shift-share regressor {p_end}
-{synopt:{cmd:e(se)}}Estimated standard error of the shift-share regressor {p_end}
-{synopt:{cmd:e(CI_low)}}Lower bound of the estimated confidence interval {p_end}
-{synopt:{cmd:e(CI_upp)}}Upper bound of the estimated confidence interval {p_end}
-{synopt:{cmd:e(p)}}P-value of the null: beta = 0 {p_end}
+{synopt:{cmd:e(b)}}Estimate of the coefficient on the shift-share regressor {p_end}
+{synopt:{cmd:e(se)}}Standard error of the estimate of the coefficient on the shift-share regressor {p_end}
+{synopt:{cmd:e(CI_low)}}Lower bound of the confidence interval for the coefficient on the shift-share regressor{p_end}
+{synopt:{cmd:e(CI_upp)}}Upper bound of the confidence interval for the coefficient on the shift-share regressor{p_end}
+{synopt:{cmd:e(p)}}P-value for the null hypothesis that the coefficient on the shift-share regressor equals zero {p_end}
 
 {marker author}{...}
 {title:Bug Reporting}
@@ -148,7 +148,7 @@ For more examples, please see "https://github.com/zhangxiang0822/BartikSEStata/b
 {title:Reference}
 {pstd} Adão, Rodrigo, Michal Kolesár, and Eduardo Morales (2019) “Shift-share Designs: Theory and Inference”. Quarterly Journal of Economics, forthcoming. https://doi.org/10.1093/qje/qjz025 {p_end}
 
-{pstd} David, H., David Dorn, and Gordon H. Hanson (2013) "The China Syndrome: Local Llabor Market Effects of Import Ccompetition in the United States." American Economic Review, 103, no. 6,  (2013): 2121-2168.
+{pstd} David, H., David Dorn, and Gordon H. Hanson (2013) "The China Syndrome: Local Labor Market Effects of Import Competition in the United States." American Economic Review, 103, no. 6,  (2013): 2121-2168.
  {p_end}
 
 {pstd} You may find a MATLAB version of this code is available at "https://github.com/kolesarm/ShiftShareSEMatlab". {p_end} 
