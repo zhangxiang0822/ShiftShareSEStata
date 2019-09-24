@@ -26,7 +26,7 @@
 {synoptline}
 {syntab:Model}
 {p2coldent:* {opt shiftshare_var(varlist)}} Shift-share regressor of interest. {p_end}
-{p2coldent:* {opt share_varlist(varlist)}} List of variables containing the sector shares. Each variable indicates the regional shares corresponding to the particular sector. 
+{p2coldent:* {opt share_varlist(varlist)}} List of variables containing the sector shares. Each variable indicates the regional shares corresponding to the corresponding sector. 
 Varlist must contain as many variables as there are sectors in the analysis. {p_end}
 {p2coldent:* {opt alpha}} Determines confidence level of reported confidence intervals, which will have coverage 1-alpha. Its default value  is 0.05. {p_end}
 
@@ -34,12 +34,12 @@ Varlist must contain as many variables as there are sectors in the analysis. {p_
 {syntab:Other}
 {synopt :{opt control_varlist(varlist)}} List of control variables to be included. {p_end}
 {synopt :{opt weight_var(varlist)}} Weights to be used in the fitting process. If specified, weighted least squares are used; otherwise, ordinary least squares are used. {p_end}
-{synopt :{opt akmtype}} Specifies which inference methods to use. It must take value 0 or 1. If it equals 1, "reg_ss" applies the AKM inference procedure described in 
+{synopt :{opt akmtype}} Specifies which inference method to use. It must equal 0 or 1. If it equals 1, "reg_ss" applies the AKM inference procedure described in 
 Adão, Kolesár, and Morales (2019). If it equals 0, "reg_ss" applies the AKM0 inference procedure described in Adão, Kolesár, and Morales (2019). If it equals 0, the 
-reported standard error corresponds to the normalized standard error, given by the length of the corresponding confidence interval divided by 2*z(1-alpha/2). The default akmtype value 
+reported standard error corresponds to the normalized standard error, given by the length of the corresponding confidence interval divided by 2*z(1-alpha/2). Its default value 
 is 1. {p_end}
 {synopt :{opt beta0 }} Null that is tested when "akmtype" equals 0 (only affects reported p-values). {p_end}
-{synopt :{opt path_cluster}} The path to the .dta file which stores the cluster information corresponding to each sector. Provide this path if you want to account for sectoral clusters. {p_end}
+{synopt :{opt path_cluster}} The path to the .dta file that stores the cluster information corresponding to each sector. Provide this path if you want to account for sectoral clusters. {p_end}
 {synopt :{opt cluster_var}} The variable name of the cluster variable in the .dta file storing the cluster information corresponding to each sector. The order of 
 the sectors in this .dta file should be the same as the order of the sectors in the "varlist" containing the sector shares (the "share_varlist").{p_end}
 
@@ -49,13 +49,13 @@ the sectors in this .dta file should be the same as the order of the sectors in 
 are collinear, so it that it has rank S_0 < S. Without loss of generality, suppose that the first S_0
 columns of the matrix are full rank, so that the collinearity is caused by the last S − S_0 sectors. In
 this case, it is not possible to recover, tilde(X)_s, the sectoral shifters with the controls partialled out, and
-the reg_ss and ivreg_ss functions will return an error message "Share matrix is collinear".
+the reg_ss function will return an error message "Share matrix is collinear".
 The researcher can either (i) drop the collinear sectors (ii) aggregate the sectors, or (iii) if the 
 only controls are those with shift-share structure, and we have data on Zs, we can estimate tilde(X)_s by running a sector-level regression of Xs onto Zs
 , and taking the residual. This
 third option is not currently implemented in this package. Note that options (i) and (ii) change the
 definition of the estimand. Since they involve changing the shock vector X_i
-, this has to be done before using the reg_ss and ivreg_ss functions.{p_end}
+, this has to be done before using the reg_ss function.{p_end}
 
 {marker Description}{...}
 {title:Note on Dataset Preparation}
@@ -70,8 +70,8 @@ We use a subset of data from Autor, Dorn, and Hanson (2013, ADH) to illustrate t
 - d_sh_empl_mfg: Change in the share of working-age population employed in manufacturing.
 - d_sh_empl_nmfg: Change in the share of working-age population employed in non-manufacturing.
 - d_tradeusch_pw: Change in sectoral U.S. imports from China normalized by U.S. total employment in the corresponding sector, aggregated to regional level. This is the variable of interest in ADH.
-- d_tradeotch_pw_lag: Change in sectoral imports from China by by A Set Of High-Income countries other than the Us normalized by beginning-of-the period U.S. 
-total employment in the corresponding sector, aggregated to the regional level. This is the intrumental variable in ADH.
+- d_tradeotch_pw_lag: Change in sectoral imports from China by by a set of high-income countries other than the U.S. normalized by the beginning-of-the period U.S. 
+total employment in the corresponding sector, aggregated to the regional level. This is the instrumental variable in ADH.
 - emp_share1 - emp_share770: The local employment share by region from the first to the 770th sector.
 - weight: Start-of-period share of U.S. population in each commuting zone (CZ).
 - state: State FIPS code.
