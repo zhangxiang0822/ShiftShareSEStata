@@ -26,7 +26,7 @@
 {synoptline}
 {syntab:Model}
 {p2coldent:* {opt shiftshare_var(varlist)}} Shift-share regressor of interest. {p_end}
-{p2coldent:* {opt share_varlist(varlist)}} List of variables containing the sector shares. Each variable indicates the regional shares corresponding to the corresponding sector. 
+{p2coldent:* {opt share_varlist(varlist)}} List of variables containing the sector shares. Each variable indicates the regional shares for the corresponding sector.
 Varlist must contain as many variables as there are sectors in the analysis. {p_end}
 {p2coldent:* {opt alpha}} Determines confidence level of reported confidence intervals, which will have coverage 1-alpha. Its default value  is 0.05. {p_end}
 
@@ -74,7 +74,7 @@ We use a subset of data from Autor, Dorn, and Hanson (2013, ADH) to illustrate t
 total employment in the corresponding sector, aggregated to the regional level. This is the instrumental variable in ADH.
 - emp_share1 - emp_share770: The local employment share by region from the first to the 770th sector.
 - weight: Start-of-period share of U.S. population in each commuting zone (CZ).
-- state: State FIPS code.
+- state: State identification nunmber (FIPS code).
 - czone: CZ identification number.
 - t2: Indicator for the period 2000-2007, which corresponds to the second period in the sample.
 - l_shind_manuf_cbp: Manufacturing employment share in each CZ (in percentage terms).
@@ -87,14 +87,14 @@ total employment in the corresponding sector, aggregated to the regional level. 
 Example 1: AKM, no cluster
 {phang2}{cmd:. 	use "data/ADH_derived.dta", clear }{p_end}
 {phang2}{cmd:. 	local control_varlist t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource }{p_end}
-{phang2}{cmd:.	reg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) control_varlist(`control_varlist') share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(1) firststage(1)}{p_end}
+{phang2}{cmd:.	reg_ss d_sh_empl, shiftshare_var(d_tradeotch_pw_lag) control_varlist(`control_varlist') share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(1)}{p_end}
 
 Example 2: AKM0, no cluster
 Be sure to put "sector_derived.dta" to your local path
 {phang2}{cmd:. 	use "data/ADH_derived.dta", clear }{p_end}
 {phang2}{cmd:. 	local control_varlist t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource }{p_end}
 {phang2}{cmd:. 	local local_path "data/sector_derived.dta"}{p_end}
-{phang2}{cmd:.	reg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) control_varlist(`control_varlist') share_varlist(emp_share*) weight_var(weight) akmtype(0)}
+{phang2}{cmd:.	reg_ss d_sh_empl, shiftshare_var(d_tradeotch_pw_lag) control_varlist(`control_varlist') share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0)}
 
 Example 3: AKM, clustered at three digit SIC level
 {phang2}{cmd:. 	use "data/ADH_derived.dta", clear }{p_end}

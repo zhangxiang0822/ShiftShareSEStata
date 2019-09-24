@@ -28,7 +28,7 @@
 {syntab:Model}
 {p2coldent:* {opt endogenous_var(varlist)}} Endogenous variable in the IV regression. {p_end}
 {p2coldent:* {opt shiftshare_iv(varlist)}} Shift-share instrumental variable. {p_end}
-{p2coldent:* {opt share_varlist(varlist)}} List of variables containing the sector shares. Each variable indicates the regional shares corresponding to the corresponding sector. 
+{p2coldent:* {opt share_varlist(varlist)}} List of variables containing the sector shares. Each variable indicates the regional shares for the corresponding sector. 
 Varlist must contain as many variables as there are sectors in the analysis. {p_end}
 {p2coldent:* {opt alpha}} Determines confidence level of reported confidence intervals, which will have coverage 1-alpha. Its default value  is 0.05. {p_end}
 
@@ -79,7 +79,7 @@ We use a subset of data from Autor, Dorn, and Hanson (2013, ADH) to illustrate t
 total employment in the corresponding sector, aggregated to the regional level. This is the instrumental variable in ADH.
 - emp_share1 - emp_share770: The local employment share by region from the first to the 770th sector.
 - weight: Start-of-period share of U.S. population in each commuting zone (CZ).
-- state: State FIPS code.
+- state: State identification nunmber (FIPS code).
 - czone: CZ identification number.
 - t2: Indicator for the period 2000-2007, which corresponds to the second period in the sample.
 - l_shind_manuf_cbp: Manufacturing employment share in each CZ (in percentage terms).
