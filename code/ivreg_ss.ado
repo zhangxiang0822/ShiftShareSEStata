@@ -29,24 +29,50 @@ program define ivreg_ss, eclass
 		display "Below we show First-stage results"
 		if "`control_varlist'" ~= "" {
 			if "`weight_var'" ~= "" {
-				reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+				if "`cluster_var'" ~= "" {
+					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
 						 alpha(`alpha') control_varlist(`control_varlist') weight_var(`weight_var') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var("`cluster_var'")
+				}
+				else {
+					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+						 alpha(`alpha') control_varlist(`control_varlist') weight_var(`weight_var') akmtype(`akmtype')
+				}
 			}
 			else {
-				reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-						 alpha(`alpha') control_varlist(`control_varlist') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var(`cluster_var')
+				if "`cluster_var'" ~= "" {
+					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+							 alpha(`alpha') control_varlist(`control_varlist') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var(`cluster_var')
+				}
+				else {
+					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+							 alpha(`alpha') control_varlist(`control_varlist') akmtype(`akmtype')
+				}
 			}
 		}
 		else {
 			if "`weight_var'" ~= "" {
-				reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-						 alpha(`alpha') weight_var(`weight_var') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var(`cluster_var')
+				if "`cluster_var'" ~= "" {
+					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+							 alpha(`alpha') weight_var(`weight_var') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var(`cluster_var')
+				}
+				else {
+					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+							 alpha(`alpha') weight_var(`weight_var') akmtype(`akmtype')
+				}
 			}
 			else {
-				reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-						 alpha(`alpha') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var(`cluster_var')
+				if "`cluster_var'" ~= "" {
+					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+							 alpha(`alpha') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var(`cluster_var')
+				}
+				else {
+					display "hahahahah"
+					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
+							 alpha(`alpha') akmtype(`akmtype')
+				}
 			}
 		}
+
 		restore
 	}
 
