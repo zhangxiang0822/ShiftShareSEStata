@@ -17,3 +17,5 @@ In `code/ADHapplication.do`, we provide several examples on how to use the `reg_
 # Bug reporting and Questions
 You're welcomed to open issues and leave messages in the `Issues` section to report bugs or ask questions. 
 
+# Some Special Notes
+Since Stata doesn't support nested `preserve` and `restore`, our `ivreg_ss` code cannot return your original dataset after computing AKM SE. Thus, you may have to reload your dataset every time you compute the AKM SE.
