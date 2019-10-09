@@ -24,14 +24,14 @@ program define ivreg_ss, eclass
 	
 	** Show first-stage results
 	if `firststage' != 0 {
-		preserve
 		display ""
 		display "Below we show First-stage results"
 		if "`control_varlist'" ~= "" {
 			if "`weight_var'" ~= "" {
 				if "`cluster_var'" ~= "" {
+					display "We're sorry that we don't support reporting first-stage results with clustering. To obtain the correct clustered AKM standard errors, please use reg_ss command to run first-stage regression manually."
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-						 alpha(`alpha') control_varlist(`control_varlist') weight_var(`weight_var') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var("`cluster_var'")
+						 alpha(`alpha') control_varlist(`control_varlist') weight_var(`weight_var') akmtype(`akmtype')
 				}
 				else {
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
@@ -40,8 +40,9 @@ program define ivreg_ss, eclass
 			}
 			else {
 				if "`cluster_var'" ~= "" {
+					display "We're sorry that we don't support reporting first-stage results with clustering. To obtain the correct clustered AKM standard errors, please use reg_ss command to run first-stage regression manually."
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-							 alpha(`alpha') control_varlist(`control_varlist') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var(`cluster_var')
+							 alpha(`alpha') control_varlist(`control_varlist') akmtype(`akmtype')
 				}
 				else {
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
@@ -52,8 +53,9 @@ program define ivreg_ss, eclass
 		else {
 			if "`weight_var'" ~= "" {
 				if "`cluster_var'" ~= "" {
+					display "We're sorry that we don't support reporting first-stage results with clustering. To obtain the correct clustered AKM standard errors, please use reg_ss command to run first-stage regression manually."
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-							 alpha(`alpha') weight_var(`weight_var') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var(`cluster_var')
+							 alpha(`alpha') weight_var(`weight_var') akmtype(`akmtype') 
 				}
 				else {
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
@@ -62,18 +64,22 @@ program define ivreg_ss, eclass
 			}
 			else {
 				if "`cluster_var'" ~= "" {
+					display "We're sorry that we don't support reporting first-stage results with clustering. To obtain the correct clustered AKM standard errors, please use reg_ss command to run first-stage regression manually."
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-							 alpha(`alpha') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var(`cluster_var')
+							 alpha(`alpha') akmtype(`akmtype')
 				}
 				else {
-					display "hahahahah"
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
 							 alpha(`alpha') akmtype(`akmtype')
 				}
 			}
 		}
-
-		restore
+		
+		local b_firststage = `e(b)'
+		local se_firststage = `e(se)'
+		local CI_upp_firststage = `e(CI_upp)'
+		local CI_low_firststage = `e(CI_low)'
+		local p_firststage = `e(p)'
 	}
 
 	** Some locals
@@ -420,4 +426,12 @@ program define ivreg_ss, eclass
 	ereturn local CI_upp = `CI_upp'
 	ereturn local CI_low = `CI_low'
 	ereturn scalar p = `p'
+	
+	if `firststage' != 0 {
+		ereturn local se_firststage = `se_firststage'
+		ereturn local b_firststage  = `b_firststage'
+		ereturn local CI_upp_firststage = `CI_upp_firststage'
+		ereturn local CI_low_firststage = `CI_low_firststage'
+		ereturn local p_firststage = `p_firststage'
+	}
 end

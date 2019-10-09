@@ -338,7 +338,6 @@ prog main
 			 control_varlist(`control_varlist') ///
 		     share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0)
 	
-	drop constant Xdd* R_* ln*
 	_rmcoll emp_share*
 	reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
 			 control_varlist(`control_varlist') ///

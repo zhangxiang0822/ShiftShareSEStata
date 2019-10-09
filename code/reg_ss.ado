@@ -60,7 +60,8 @@ program define reg_ss, eclass
 		
 		* reg `dependant_var' `shiftshare_var' `control_varlist', cluster(state)
 	}
-
+	
+	preserve
 	** Generate constant term
 	qui gen constant = 1
 	
@@ -137,7 +138,7 @@ program define reg_ss, eclass
 		mat Xdd = (I_mat - tildeZn * inv(tildeZn'*tildeZn) * tildeZn') * tildeXn
 
 		mat Xddd = inv(ln'*ln) * (ln' * Xdd)
-	
+		
 		** Compute SE
 		if "`path_cluster'" == "" {
 			mat R_raw = (e' * ln)'
@@ -194,6 +195,8 @@ program define reg_ss, eclass
 		display "Homoscedastic     " %5.4f `SE_homo'  "    " %5.4f `p_homo' "    " %5.4f `CI_low_homo' "    " %5.4f `CI_upp_homo' 
 		display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r' 
 		display "AKM               " %5.4f `SE_AKM'   "    " %5.4f `p' "    " %5.4f `CI_low' "    " %5.4f `CI_upp'
+		
+		restore
 	}
 	
 	** Estimate AKM0 standard error
@@ -232,7 +235,9 @@ program define reg_ss, eclass
 			
 			mat LambdaAKM = R_sq' * Xddd_sq
 		}
-		else {		
+		else {
+			** Avoid nested preserve
+			restore
 			** Get list of share variables by cluster
 			use "`path_cluster'", clear
 			
@@ -308,6 +313,8 @@ program define reg_ss, eclass
 			mat SXY = lnY_lnX' * Xddd_sq
 			mat SXX = lnX_lnX' * Xddd_sq
 			mat SYY = lnY_lnY' * Xddd_sq
+			
+			restore
 		}
 		
 		mat Q = (RX * RX)/`critical2' - SXX
