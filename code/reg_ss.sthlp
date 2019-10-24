@@ -123,6 +123,7 @@ For more examples, please see "https://github.com/zhangxiang0822/BartikSEStata/b
 {synopt:{cmd:e(se)}}Standard error of the estimate of the coefficient on the shift-share regressor {p_end}
 {synopt:{cmd:e(CI_low)}}Lower bound of the confidence interval for the coefficient on the shift-share regressor{p_end}
 {synopt:{cmd:e(CI_upp)}}Upper bound of the confidence interval for the coefficient on the shift-share regressor{p_end}
+{synopt:{cmd:e(tstat)}}T-statistics for the null hypothesis that the coefficient on the shift-share regressor equals zero {p_end}
 {synopt:{cmd:e(p)}}P-value for the null hypothesis that the coefficient on the shift-share regressor equals zero {p_end}
 
 {marker author}{...}

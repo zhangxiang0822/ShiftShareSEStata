@@ -127,11 +127,13 @@ For more examples, please see "https://github.com/zhangxiang0822/BartikSEStata/b
 {synopt:{cmd:e(se)}}Standard error of the estimate of the coefficient on the endogenous regressor {p_end}
 {synopt:{cmd:e(CI_low)}}Lower bound of the confidence interval for the coefficient on the endogenous regressor{p_end}
 {synopt:{cmd:e(CI_upp)}}Upper bound of the confidence interval for the coefficient on the endogenous regressor{p_end}
+{synopt:{cmd:e(tstat)}}T-statistics for the null hypothesis that the coefficient on the endogenous regressor equals zero {p_end}
 {synopt:{cmd:e(p)}}P-value for the null hypothesis that the coefficient on the endogenous regressor equals zero {p_end}
 {synopt:{cmd:e(b_firststage)}}Estimate of the coefficient on the shift-share regressor in the first-stage{p_end}
 {synopt:{cmd:e(se_firststage)}}Standard error of the estimate of the coefficient on the shift-share regressor in the first-stage{p_end}
 {synopt:{cmd:e(CI_low_firststage)}}Lower bound of the confidence interval for the coefficient on the shift-share regressor in the first-stage{p_end}
 {synopt:{cmd:e(CI_upp_firststage)}}Upper bound of the confidence interval for the coefficient on the shift-share regressor in the first-stage{p_end}
+{synopt:{cmd:e(tstat_firststage)}}T-statistics for the null hypothesis that the coefficient on the shift-share regressor equals zero in the first-stage{p_end}
 {synopt:{cmd:e(p_firststage)}}P-value for the null hypothesis that the coefficient on the shift-share regressor equals zero in the first-stage{p_end}
 
 {marker author}{...}

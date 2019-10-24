@@ -80,6 +80,7 @@ program define ivreg_ss, eclass
 		local CI_upp_firststage = `e(CI_upp)'
 		local CI_low_firststage = `e(CI_low)'
 		local p_firststage = `e(p)'
+		local tstat_firststage = `e(tstat)'
 	}
 
 	** Some locals
@@ -213,7 +214,7 @@ program define ivreg_ss, eclass
 			
 			gen R_raw_sq = R_raw^2
 			gen Xddd_sq = Xddd^2
-
+			
 			mkmat R_raw_sq, matrix(R_sq)
 			mkmat Xddd_sq, matrix(Xddd_sq)
 			
@@ -242,6 +243,7 @@ program define ivreg_ss, eclass
 		}
 		mat variance = 1/`hatpi'^2 * inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
 		local SE_AKM = sqrt(variance[1,1])
+		
 		local CI_low = `hat_beta' - `critical_value' * `SE_AKM'
 		local CI_upp = `hat_beta' + `critical_value' * `SE_AKM'
 		
@@ -426,6 +428,7 @@ program define ivreg_ss, eclass
 	ereturn local CI_upp = `CI_upp'
 	ereturn local CI_low = `CI_low'
 	ereturn scalar p = `p'
+	ereturn scalar tstat = `tstat'
 	
 	if `firststage' != 0 {
 		ereturn local se_firststage = `se_firststage'
@@ -433,5 +436,6 @@ program define ivreg_ss, eclass
 		ereturn local CI_upp_firststage = `CI_upp_firststage'
 		ereturn local CI_low_firststage = `CI_low_firststage'
 		ereturn local p_firststage = `p_firststage'
+		ereturn scalar tstat = `tstat_firststage'
 	}
 end

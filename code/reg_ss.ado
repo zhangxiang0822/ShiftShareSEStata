@@ -384,4 +384,5 @@ program define reg_ss, eclass
 	ereturn scalar CI_upp = `CI_upp'
 	ereturn scalar CI_low = `CI_low'
 	ereturn scalar p = `p'
+	ereturn scalar tstat = `tstat'
 end
