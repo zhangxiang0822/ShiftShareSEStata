@@ -20,3 +20,6 @@ You're welcomed to open issues and leave messages in the `Issues` section to rep
 # Some Special Notes
 - Please make sure you have **no missing values** in your dataset. We don't handle missing-value problem in our code, and having missing values in the dataset would cause the probram shut down.
 - Since Stata doesn't support nested `preserve` and `restore`, our `ivreg_ss` code cannot return your original dataset after computing AKM SE. `reg_ss` would return your original dataset if you don't compute clustered standard errors. We would suggest reload your dataset every time after you compute the AKM SE.
+
+# Some Common Error Message
+- no observations: You may have missing values in your share variable list/ shiftshare variable
