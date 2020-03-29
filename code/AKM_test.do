@@ -337,37 +337,7 @@ prog main
 	reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
 			 control_varlist(`control_varlist') ///
 		     share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0)
-	
-	_rmcoll emp_share*
-	reg_ss d_tradeusch_pw, shiftshare_var(d_tradeotch_pw_lag) ///
-			 control_varlist(`control_varlist') ///
-		     share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05) akmtype(0)
 			 
-	** Test Using Data not Publicly Available
-	/*
-	use "data/czmig_empshares_96_14.dta", clear
-	reg_ss y_out_tot1, shiftshare_var(adh) share_varlist(empshare1-empshare901) weight_var(cz_weight)
-	
-	use "data/czmig_empshares_96_14.dta", clear
-	expand 2
-	reg_ss y_out_tot1, shiftshare_var(adh) share_varlist(empshare1-empshare901) weight_var(cz_weight)
-	
-	use "data/bartik_test_data.dta", clear
-	
-	foreach var of varlist w2011-w3999 {
-		qui replace `var' = 0 if mi(`var')
-		egen row_total`var' = total(`var')
-		
-		if row_total`var' == 0 {
-			drop `var' row_total`var'
-		}
-		else {
-			drop row_total`var'
-		}
-	}
-
-	reg_ss dlogvehicles, shiftshare_var(tradeshockOTH) share_varlist(w2011-w3999)
-	*/
 end
 
 cap log close
