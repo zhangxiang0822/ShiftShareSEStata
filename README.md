@@ -1,4 +1,4 @@
-# BartikSEStata
+# ShiftShareSEStata
 Compute confidence intervals in shift-share designs, also called [Bartik 1991](https://research.upjohn.org/up_press/77/) designs using procedures from [Adão, Kolesár, and Morales (2019)](https://doi.org/10.1093/qje/qjz025).
 
 # Installation of the package
