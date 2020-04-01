@@ -1,5 +1,5 @@
 # ShiftShareSEStata
-Compute confidence intervals in shift-share designs, also called [Bartik 1991](https://research.upjohn.org/up_press/77/) designs using procedures from [Adão, Kolesár, and Morales (2019)](https://doi.org/10.1093/qje/qjz025).
+This R package implements confidence intervals in shift-share designs (also called [Bartik 1991](https://research.upjohn.org/up_press/77/) designs the `AKM' and `AKM0' procedures from [Adão, Kolesár, and Morales (2019)](https://doi.org/10.1093/qje/qjz025).
 
 # Installation of the package
 To install the package from Github, you may download the `reg_ss.ado`, `reg_ss.sthlp`, `ivreg_ss.ado`, and `ivreg_ss.sthlp`, and put them into the Stata personal ado directory.
