@@ -1,5 +1,5 @@
 # ShiftShareSEStata
-This R package implements confidence intervals in shift-share designs (also called [Bartik 1991](https://research.upjohn.org/up_press/77/) designs the `AKM` and `AKM0` procedures from [Adão, Kolesár, and Morales (2019)](https://doi.org/10.1093/qje/qjz025).
+This R package implements confidence intervals in shift-share designs (also called [Bartik 1991](https://research.upjohn.org/up_press/77/) designs) using the `AKM` and `AKM0` procedures from [Adão, Kolesár, and Morales (2019)](https://doi.org/10.1093/qje/qjz025).
 
 ## Example
 IV regression using data from [Autor, Dorn, and Hanson (2013)](https://www.aeaweb.org/articles?id=10.1257/aer.103.6.2121), including the first-stage results
@@ -14,7 +14,7 @@ Corresponding reduced-form regression
 
 In `code/ADHapplication.do`, we provide additional examples on how to use the `reg_ss` and `ivreg_ss` to estimate linear regressions in which the regressor of interest/IV has a shift-share structure. To successfully run those codes, you may want to download the dataset needed from the `data` folder. The two datasets we use to produce results are `ADH_derived.dta` and `dector_derived.dta`.
 
-## Installation of the package
+## Installation
 To install the package from Github, you may download the `reg_ss.ado`, `reg_ss.sthlp`, `ivreg_ss.ado`, and `ivreg_ss.sthlp`, and put them into the Stata personal ado directory.
 - If you use Windows, it is probably `c:\ado\personal`, but it might be someplace else.
 - If you use Mac, it is probably `~/Documents/Stata/ado`, but it might be someplace else.
