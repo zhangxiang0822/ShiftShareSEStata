@@ -22,6 +22,7 @@ program define ivreg_ss, eclass
 		local akmtype = 1
 	}
 	
+	
 	** Show first-stage results
 	if `firststage' != 0 {
 		display ""
@@ -104,15 +105,16 @@ program define ivreg_ss, eclass
 		* ivregress 2sls `dependant_var' `control_varlist' (`endogenous_var' = `shiftshare_iv') [aw = `weight_var'], cluster(state)
 	}
 	else {
-		qui ivregress 2sls `dependant_var' (`endogenous_var' = `shiftshare_iv') 
+		qui ivregress 2sls `dependant_var' `control_varlist'  (`endogenous_var' = `shiftshare_iv') 
 		local SE_homo = _se[`endogenous_var']
 		local z_homo  = _b[`endogenous_var']/_se[`endogenous_var']
 		local p_homo  = normal(`z_homo')
 		local CI_low_homo = _b[`endogenous_var'] - `critical_value' * `SE_homo'
 		local CI_upp_homo = _b[`endogenous_var'] + `critical_value' * `SE_homo'
 		
-		qui ivregress 2sls `dependant_var' (`endogenous_var' = `shiftshare_iv'), r 
+		qui ivregress 2sls `dependant_var' `control_varlist'  (`endogenous_var' = `shiftshare_iv'), vce(robust)
 		local SE_r = _se[`endogenous_var']
+		
 		local z_r  = _b[`endogenous_var']/_se[`endogenous_var']
 		local p_r  = normal(`z_r')
 		local CI_low_r = _b[`endogenous_var'] - `critical_value' * `SE_r'
@@ -151,9 +153,10 @@ program define ivreg_ss, eclass
 		display "Warning: You must manually generate dummy variables, instead of using i.XXX"
 		exit
 	}
-	
+
 	_rmcoll `share_varlist', force
 	local num_omit_var = `r(k_omitted)'
+	
 	if `num_omit_var' > 0 {
 		display "Error: You have collinear share variables (Share matrix has colinear columns)"
 		exit
@@ -219,6 +222,7 @@ program define ivreg_ss, eclass
 			mkmat Xddd_sq, matrix(Xddd_sq)
 			
 			mat LambdaAKM = R_sq' * Xddd_sq
+			
 		}
 		else {		
 			** Get list of share variables by cluster
@@ -241,7 +245,7 @@ program define ivreg_ss, eclass
 			matrix opaccum A = e_ln, group(`cluster_var') opvar(Xddd)
 			mat LambdaAKM = A[1,1]
 		}
-		mat variance = 1/`hatpi'^2 * inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
+		mat variance = 1/(`hatpi')^2 * inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
 		local SE_AKM = sqrt(variance[1,1])
 		
 		local CI_low = `hat_beta' - `critical_value' * `SE_AKM'
@@ -438,4 +442,5 @@ program define ivreg_ss, eclass
 		ereturn local p_firststage = `p_firststage'
 		ereturn scalar tstat = `tstat_firststage'
 	}
+	*/
 end
