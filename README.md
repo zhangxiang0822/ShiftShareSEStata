@@ -26,8 +26,13 @@ structure, and instrumental variables regressions in which the instrument has a
 shift-share structure.
 
 ## Installation
-In the near future, you will be able to directly install the packages from
-Stata. In the meantime, to install the package from Github, download the files
+
+You can install the released version of `reg_ss` and `ivreg_ss` from using the `ssc` command within Stata.
+
+       ssc install reg_ss
+       ssc install ivreg_ss
+
+In the meantime, to install the package from Github, download the files
 [`reg_ss.ado`](code/reg_ss.ado), [`reg_ss.sthlp`](code/reg_ss.sthlp),
 [`ivreg_ss.ado`](code/ivreg_ss.ado), [`ivreg_ss.sthlp`](code/ivreg_ss.sthlp)
 from the `code` directory, and put them into Stata's personal `ado` directory,
