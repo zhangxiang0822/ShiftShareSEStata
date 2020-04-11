@@ -27,12 +27,14 @@ shift-share structure.
 
 ## Installation
 
-You can install the released version of `reg_ss` and `ivreg_ss` from using the `ssc` command within Stata.
+The released version of `reg_ss` and `ivreg_ss` is available at REPEC (see [reg_ss](https://ideas.repec.org/c/boc/bocode/s458758.html) and [ivreg_ss](https://ideas.repec.org/c/boc/bocode/s458759.html)). 
+You can install these packages from within Stata using the `ssc` command:
+```stata
+ssc install reg_ss
+ssc install ivreg_ss
+```
 
-       ssc install reg_ss
-       ssc install ivreg_ss
-
-In the meantime, to install the package from Github, download the files
+Alternatively, to download the development version of these packages from GitHub, download the files
 [`reg_ss.ado`](code/reg_ss.ado), [`reg_ss.sthlp`](code/reg_ss.sthlp),
 [`ivreg_ss.ado`](code/ivreg_ss.ado), [`ivreg_ss.sthlp`](code/ivreg_ss.sthlp)
 from the `code` directory, and put them into Stata's personal `ado` directory,
