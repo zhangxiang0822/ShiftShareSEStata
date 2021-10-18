@@ -91,14 +91,14 @@ program define ivreg_ss, eclass
 		qui ivregress 2sls `dependant_var' `control_varlist' (`endogenous_var' = `shiftshare_iv') [aw = `weight_var']
 		local SE_homo = _se[`endogenous_var']
 		local z_homo  = _b[`endogenous_var']/_se[`endogenous_var']
-		local p_homo  = normal(`z_homo')
+		local p_homo  = 2 * (1 - normal(abs(`z_homo')))
 		local CI_low_homo = _b[`endogenous_var'] - `critical_value' * `SE_homo'
 		local CI_upp_homo = _b[`endogenous_var'] + `critical_value' * `SE_homo'
 		
 		qui ivregress 2sls `dependant_var' `control_varlist' (`endogenous_var' = `shiftshare_iv') [aw = `weight_var'], r 
 		local SE_r = _se[`endogenous_var']
 		local z_r  = _b[`endogenous_var']/_se[`endogenous_var']
-		local p_r  = normal(`z_r')
+		local p_r  = 2 * (1 - normal(abs(`z_r')))
 		local CI_low_r = _b[`endogenous_var'] - `critical_value' * `SE_r'
 		local CI_upp_r = _b[`endogenous_var'] + `critical_value' * `SE_r'
 		
@@ -108,7 +108,7 @@ program define ivreg_ss, eclass
 		qui ivregress 2sls `dependant_var' `control_varlist'  (`endogenous_var' = `shiftshare_iv') 
 		local SE_homo = _se[`endogenous_var']
 		local z_homo  = _b[`endogenous_var']/_se[`endogenous_var']
-		local p_homo  = normal(`z_homo')
+		local p_homo  = 2 * (1 - normal(abs(`z_homo')))
 		local CI_low_homo = _b[`endogenous_var'] - `critical_value' * `SE_homo'
 		local CI_upp_homo = _b[`endogenous_var'] + `critical_value' * `SE_homo'
 		
@@ -116,7 +116,7 @@ program define ivreg_ss, eclass
 		local SE_r = _se[`endogenous_var']
 		
 		local z_r  = _b[`endogenous_var']/_se[`endogenous_var']
-		local p_r  = normal(`z_r')
+		local p_r  = 2 * (1 - normal(abs(`z_r')))
 		local CI_low_r = _b[`endogenous_var'] - `critical_value' * `SE_r'
 		local CI_upp_r = _b[`endogenous_var'] + `critical_value' * `SE_r'
 		

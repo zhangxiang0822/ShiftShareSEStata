@@ -37,11 +37,9 @@ program define reg_ss, eclass
 		qui reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var'], r
 		local SE_r = _se[`shiftshare_var']
 		local t_r  = _b[`shiftshare_var']/_se[`shiftshare_var']
-		local p_r  = 2*ttail(e(df_r),abs(`t_homo'))
+		local p_r  = 2*ttail(e(df_r),abs(`t_r'))
 		local CI_low_r = _b[`shiftshare_var'] - `critical_value' * `SE_r'
 		local CI_upp_r = _b[`shiftshare_var'] + `critical_value' * `SE_r'
-		
-		* reg `dependant_var' `shiftshare_var' `control_varlist' [aw = `weight_var'], cluster(state)
 	}
 	else {
 		qui reg `dependant_var' `shiftshare_var' `control_varlist'
@@ -54,7 +52,7 @@ program define reg_ss, eclass
 		qui reg `dependant_var' `shiftshare_var' `control_varlist', r
 		local SE_r = _se[`shiftshare_var']
 		local t_r  = _b[`shiftshare_var']/_se[`shiftshare_var']
-		local p_r  = 2*ttail(e(df_r),abs(`t_homo'))
+		local p_r  = 2*ttail(e(df_r),abs(`t_r'))
 		local CI_low_r = _b[`shiftshare_var'] - `critical_value' * `SE_r'
 		local CI_upp_r = _b[`shiftshare_var'] + `critical_value' * `SE_r'
 		
