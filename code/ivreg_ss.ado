@@ -8,6 +8,7 @@ program define ivreg_ss, eclass
 	set more off
 	set matsize 10000
 	
+	preserve
 	local dependant_var `varlist'
 	
 	if "`beta0'" == "" {
@@ -30,9 +31,9 @@ program define ivreg_ss, eclass
 		if "`control_varlist'" ~= "" {
 			if "`weight_var'" ~= "" {
 				if "`cluster_var'" ~= "" {
-					display "We're sorry that we don't support reporting first-stage results with clustering. To obtain the correct clustered AKM standard errors, please use reg_ss command to run first-stage regression manually."
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-						 alpha(`alpha') control_varlist(`control_varlist') weight_var(`weight_var') akmtype(`akmtype')
+						 alpha(`alpha') control_varlist(`control_varlist') weight_var(`weight_var') akmtype(`akmtype') ///
+						 path_cluster(`path_cluster') cluster_var(`cluster_var')
 				}
 				else {
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
@@ -41,9 +42,9 @@ program define ivreg_ss, eclass
 			}
 			else {
 				if "`cluster_var'" ~= "" {
-					display "We're sorry that we don't support reporting first-stage results with clustering. To obtain the correct clustered AKM standard errors, please use reg_ss command to run first-stage regression manually."
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-							 alpha(`alpha') control_varlist(`control_varlist') akmtype(`akmtype')
+							 alpha(`alpha') control_varlist(`control_varlist') akmtype(`akmtype') ///
+							 path_cluster(`path_cluster') cluster_var(`cluster_var') 
 				}
 				else {
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
@@ -54,10 +55,10 @@ program define ivreg_ss, eclass
 		else {
 			if "`weight_var'" ~= "" {
 				if "`cluster_var'" ~= "" {
-					display "We're sorry that we don't support reporting first-stage results with clustering. To obtain the correct clustered AKM standard errors, please use reg_ss command to run first-stage regression manually."
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-							 alpha(`alpha') weight_var(`weight_var') akmtype(`akmtype') 
-				}
+							 alpha(`alpha') weight_var(`weight_var') akmtype(`akmtype') ///
+							 path_cluster(`path_cluster') cluster_var(`cluster_var')
+				} 
 				else {
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
 							 alpha(`alpha') weight_var(`weight_var') akmtype(`akmtype')
@@ -65,9 +66,8 @@ program define ivreg_ss, eclass
 			}
 			else {
 				if "`cluster_var'" ~= "" {
-					display "We're sorry that we don't support reporting first-stage results with clustering. To obtain the correct clustered AKM standard errors, please use reg_ss command to run first-stage regression manually."
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
-							 alpha(`alpha') akmtype(`akmtype')
+							 alpha(`alpha') akmtype(`akmtype') path_cluster(`path_cluster') cluster_var(`cluster_var')
 				}
 				else {
 					reg_ss `endogenous_var', shiftshare_var(`shiftshare_iv') share_varlist(`share_varlist') ///
@@ -164,275 +164,182 @@ program define ivreg_ss, eclass
 	
 	** Generate Matrix of Regressors, shares, and outcome variable
 	if ("`control_varlist'" ~= "") {
-		mkmat `shiftshare_iv' `controls', matrix(Mn) //Matrix of IVs
-		mkmat `endogenous_var' `controls', matrix(Gn)   //Matrix of regressors
+		local IV_varlist `shiftshare_iv' `controls'
+		local regressor_varlist `endogenous_var' `controls'
 	}
 	else {
-		mkmat `shiftshare_iv' constant, matrix(Mn)     //Matrix of IVs
-		mkmat `endogenous_var' constant, matrix(Gn)    //Matrix of regressors
-	}
-	mkmat `share_varlist', matrix(ln)						//Matrix of Shares
-	mkmat `dependant_var', matrix(tildeYn) 				//Dependent Variable   
-	
-	local num_counties = rowsof(ln)
-	local num_sector1  = colsof(ln)
-	
-	if (`num_counties' < `num_sector1') {
-		display "ERROR: You have more number of sectors than regions"
-		exit
+		local IV_varlist `shiftshare_iv' constant
+		local regressor_varlist `endogenous_var' constant
 	}
 	
-	** OLS Estimates
-	mat P1 = Mn' * Gn
-	mat P2 = inv(Mn' * Mn)
-	mat P3 = Mn' * tildeYn
-	mat hat_theta = inv(P1'*P2*P1) * (P1'*P2*P3)
-	
-	mat e = tildeYn - Gn * hat_theta
-	local hat_beta = hat_theta[1, 1]
-	
-	** Auxiliary variables
-	mkmat `controls', matrix(tildeZn)
-	mkmat `shiftshare_iv', matrix(tildeXn)
-	mkmat `endogenous_var', matrix(tildeGn)
-	
-	mat A = tildeZn * inv(tildeZn'*tildeZn)
-	mat Xdd = tildeXn - A*(tildeZn'*tildeXn)
-	mat Ydd = tildeYn - A*(tildeZn'*tildeYn) 
-	mat Gdd = tildeGn - A*(tildeZn'*tildeGn)
-	mat Xddd = inv(ln'*ln) * (ln'*Xdd)
-	
-	** First stage coefficient
-	mat hat_thetaFS = inv(Mn'*Mn) * (Mn'*Gdd)
-	local hatpi = hat_thetaFS[1,1]
+	marksample touse
+	markout `touse' `shiftshare_var' `regressor_varlist' `share_varlist', strok
 	
 	** Estimate AKM standard error
 	if `akmtype' == 1 {
+	
+		tempname ln Xdd Xddd e 
+		mata: s_AKM1_consvec_iv("`IV_varlist'", "`regressor_varlist'", "`share_varlist'", "`dependant_var'", "`touse'")
+		
+		** commonly used matrices
+		mat `ln'	= r(ln)
+		mat `Xdd'	= r(Xdd)
+		mat `Xddd'	= r(Xddd)
+		mat `e'		= r(e)
+		
+		** Get regression coefficient
+		local coef = `r(b)'
+		local fs_coef = `r(fs_b)'
+		
+		** Check number of regions and number of sectors
+		local num_counties = rowsof(`ln')
+		local num_sector1  = colsof(`ln')
+	
+		if (`num_counties' < `num_sector1') {
+			display "ERROR: You have more number of sectors than regions"
+			exit
+		}
+		
+		restore
+		
 		** Compute SE
 		if "`path_cluster'" == "" {
-			mat R_raw = (e' * ln)'
-			svmat R_raw, names(R_raw)
-			svmat Xddd, names(Xddd)
-			qui drop if mi(R_raw)
-			
-			gen R_raw_sq = R_raw^2
-			gen Xddd_sq = Xddd^2
-			
-			mkmat R_raw_sq, matrix(R_sq)
-			mkmat Xddd_sq, matrix(Xddd_sq)
-			
-			mat LambdaAKM = R_sq' * Xddd_sq
-			
+			mata: s_AKM1_nocluster_iv("`e'", "`ln'", "`Xdd'", "`Xddd'", `coef', `fs_coef', `critical_value')
 		}
 		else {		
-			** Get list of share variables by cluster
+			preserve
 			use "`path_cluster'", clear
+				
+			local 0 `cluster_var'
+			syntax varlist
+			
+			marksample alluse
+			markout `alluse' `cluster_var', strok
 			
 			qui sum `cluster_var'
-			local num_sector2 = r(N)
+			local num_sector_obs = r(N)
 			
-			if (`num_sector1' != `num_sector2') {
-				display "Error: The length of your cluster_var is different from the number of sectors"
-				exit
-			}
+			** translate sector data into matrix
+			tempname sec_vec_full sec_vec_unique
 			
-			mat e_ln = (e' * ln)'
-			svmat e_ln, names(e_ln)
-			svmat Xddd, names(Xddd)
-			qui keep if ~mi(e_ln)
-			sort `cluster_var'
-		
-			matrix opaccum A = e_ln, group(`cluster_var') opvar(Xddd)
-			mat LambdaAKM = A[1,1]
+			mata: s_readsec_iv("`cluster_var'", "`alluse'")
+			mat `sec_vec_full' = r(sec_vec)
+			
+			** get unique values of `cluster_var'
+			qui duplicates drop `cluster_var', force
+			mata: s_readsec_iv("`cluster_var'", "`alluse'")
+			mat `sec_vec_unique' = r(sec_vec)
+			
+			** Compute SE
+			mata: s_AKM1_cluster_iv("`e'", "`ln'", "`Xdd'", "`Xddd'", `beta0', `critical_value', "`sec_vec_full'", "`sec_vec_unique'", `coef', `fs_coef')
+			
+			restore
 		}
-		mat variance = 1/(`hatpi')^2 * inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
-		local SE_AKM = sqrt(variance[1,1])
 		
-		local CI_low = `hat_beta' - `critical_value' * `SE_AKM'
-		local CI_upp = `hat_beta' + `critical_value' * `SE_AKM'
-		
-		local tstat = `hat_beta' / `SE_AKM'
-		local p = 2*(1 - normal(abs(`tstat')))
-		
-		** Output Results
+		** Display results
 		display " "
-		display "Below we show IV regression results"
-		display "The estimated coefficient is " %5.4f `hat_beta'
+		display "The estimated coefficient is " %5.4f `coef'
 		display "Inference"
 		display "               Std. Error   p-value   Lower CI   Upper CI"
 		display "Homoscedastic     " %5.4f `SE_homo'  "    " %5.4f `p_homo' "    " %5.4f `CI_low_homo' "    " %5.4f `CI_upp_homo' 
-		display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r' 
-		display "AKM               " %5.4f `SE_AKM'   "    " %5.4f `p' "    " %5.4f `CI_low' "    " %5.4f `CI_upp'
+		display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r'
+		display "AKM0              " %5.4f `r(se)'  "    " %5.4f `r(p)' "    " %5.4f `r(CIl)' "    " %5.4f `r(CIu)'
 	}
-		
-	if `akmtype' == 0 {
-		** Compute SE
-		mat e_null = Ydd - Gdd * `beta0'
-		
-		svmat Xddd, names(Xddd)
-		qui gen Xddd_sq = Xddd^2
-		
-		if "`path_cluster'" == "" {
-			mat R_raw = (e_null' * ln)'
-			svmat R_raw, names(R_raw)
-			
-			qui drop if mi(R_raw)
-			
-			gen R_raw_sq = R_raw^2
-			mkmat R_raw_sq, matrix(R_sq)
-			mkmat Xddd_sq, matrix(Xddd_sq)
-			
-			mat LambdaAKM = R_sq' * Xddd_sq
-		}
-		else {
-			** Get list of share variables by cluster
-			use "`path_cluster'", clear
-			
-			qui sum `cluster_var'
-			local num_sector2 = r(N)
-			
-			if (`num_sector1' != `num_sector2') {
-				display "Error: The length of your cluster_var is different from the number of sectors"
-				exit
-			}
-			
-			mat e_ln = (e_null' * ln)'
-			mat Xdd_ln = (Gdd' * ln)'
-			mat Ydd_ln = (Ydd' * ln)'
-			svmat e_ln, names(e_ln)
-			svmat Xdd_ln, names(Xdd_ln)
-			svmat Ydd_ln, names(Ydd_ln)
-			svmat Xddd, names(Xddd)
-			
-			qui keep if ~mi(e_ln)
-			sort `cluster_var'
-		
-			matrix opaccum A = e_ln, group(`cluster_var') opvar(Xddd)
-			mat LambdaAKM = A[1,1]
-
-			matrix opaccum B = Xdd_ln, group(`cluster_var') opvar(Xddd)
-			mat SXX = B[1,1]
-			
-			matrix opaccum B = Ydd_ln, group(`cluster_var') opvar(Xddd)
-			mat SYY = B[1,1]
-			
-			qui levelsof `cluster_var'
-			local sector_list = r(levels)
-			
-			mat SXY = J(1,1,0)
-			foreach cat in `sector_list' {
-				preserve
-				qui keep if `cluster_var' == `cat'
-				
-				mkmat Xdd_ln, matrix(Xdd_ln1)
-				mkmat Ydd_ln, matrix(Ydd_ln1)
-				mkmat Xddd, matrix(Xddd1) 
-				
-				mat SXY = SXY + Xdd_ln1'*Xddd1*Xddd1'*Ydd_ln1
-				restore
-			}
-		}
-		
-		* Variance matrix
-		mat variance = 1/`hatpi'^2 * inv(Xdd'*Xdd) * LambdaAKM * inv(Xdd'*Xdd)
-		local SE_AKMnull_n = sqrt(variance[1,1])
-		
-		* Compute Confidence INterval
-		local critical_value = invnormal(1-0.05/2)
-		local critical2 = `critical_value'^2
-		mat RY = Xdd' * Ydd
-		mat RX = Xdd' * Gdd
-
-		if "`path_cluster'" == "" {
-			mat lnY =  (Ydd' * ln)'
-			mat lnX =  (Gdd' * ln)'
-			
-			svmat lnY, names(lnY)
-			svmat lnX, names(lnX)
-			gen lnY_lnX = lnY * lnX
-			gen lnY_lnY = lnY1 * lnY1
-			gen lnX_lnX = lnX1 * lnX1
-			
-			mkmat lnY_lnX, matrix(lnY_lnX)
-			mkmat lnY_lnY, matrix(lnY_lnY)
-			mkmat lnX_lnX, matrix(lnX_lnX)
-			
-			mat SXY = lnY_lnX' * Xddd_sq
-			mat SXX = lnX_lnX' * Xddd_sq
-			mat SYY = lnY_lnY' * Xddd_sq
-		}
-
-		mat Q = (RX * RX)/`critical2' - SXX
-		mat Delta = (RY * RX - `critical2' * SXY) * (RY * RX - `critical2' * SXY) - (RX * RX - `critical2' * SXX) * (RY * RY - `critical2' * SYY)
-		
-		local Q = Q[1,1]
-		local Delta = Delta[1,1]
-		
-		if `Q' > 0 {
-			mat CIl = ((RY * RX - `critical2' * SXY) - `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
-			mat CIu = ((RY * RX - `critical2' * SXY) + `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
-			local CI_low = CIl[1,1]
-			local CI_upp = CIu[1,1]
-			local CIType = 1
-		} 
-		else {
-			if `Delta' > 0 {
-				mat CIl = ((RY*RX - `critical2' * SXY) + `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
-				mat CIu = ((RY*RX - `critical2' * SXY) - `Delta'^(1/2) ) * inv(RX * RX - `critical2' * SXX)
-				local CI_low = CIl[1,1]
-				local CI_upp = CIu[1,1]
-				local CIType = 2
-			} 
-			else {
-				local CI_low = -10000000
-				local CI_upp = 10000000
-				local CIType = 3
-			}
-		}    
-		
-		local SE_AKM0 = (`CI_upp' - `CI_low')/(2 * `critical_value')
-		
-		local tstat = (`hat_beta' - `beta0') / `SE_AKMnull_n'
-		local p = 2*(1 - normal(abs(`tstat')))
-		
-		** Output Results
-		display " "
-		display "Below we show IV regression results"
-		display "The estimated coefficient is " %5.4f `hat_beta'
-		display "Inference"
-		display "               Std. Error   p-value   Lower CI   Upper CI"
-		display "Homoscedastic     " %5.4f `SE_homo'  "    " %5.4f `p_homo' "    " %5.4f `CI_low_homo' "    " %5.4f `CI_upp_homo' 
-		display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r' 
-		
-		if `CIType' == 1 {
-			display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " %5.4f `CI_low' "    " %5.4f `CI_upp'
-		}
-		else if `CIType' == 2 {
-			display "Inference"
-			display "               Std. Error   p-value   CI"
-			display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " "=(-Inf, " %5.4f `CI_low' "] + [" %5.4f `CI_upp' ", Inf)"
-		}
-		else {
-			display "Inference"
-			display "               Std. Error   p-value   CI"
-			display "AKM0              " %5.4f `SE_AKM0'  "    " %5.4f `p' "    " "=(-Inf, Inf)"
-		}
-	}	
-
 	
-	** Save results for display
-	ereturn scalar b = `hat_beta'
+	** Estimate AKM0 standard error
 	if `akmtype' == 0 {
-		ereturn local se = `SE_AKM0'
+	
+		tempname ln Xdd Xddd Ydd Gdd e e_null 
+		mata: s_AKM0_consvec_iv("`IV_varlist'", "`regressor_varlist'", "`share_varlist'", "`dependant_var'", "`touse'", `beta0')
+			
+		** commonly used matrices
+		mat `ln'		= r(ln)
+		mat `Xdd'		= r(Xdd)
+		mat `Xddd'		= r(Xddd)
+		mat `Ydd'		= r(Ydd)
+		mat `Gdd'		= r(Gdd)
+		mat `e'			= r(e)
+		mat `e_null'	= r(e_null)
+		
+		** Get regression coefficient
+		local coef = `r(b)'
+		local fs_coef = `r(fs_b)'
+		
+		** Check number of regions and number of sectors
+		local num_counties = rowsof(`ln')
+		local num_sector1  = colsof(`ln')
+	
+		if (`num_counties' < `num_sector1') {
+			display "ERROR: You have more number of sectors than regions"
+			exit
+		}
+		
+		restore
+		
+		** Compute standard error
+		if "`path_cluster'" == "" {
+			mata: s_AKM0_nocluster_iv("`e_null'", "`ln'", "`Xdd'", "`Xddd'", "`Ydd'", "`Gdd'", `coef', `fs_coef', `beta0', `critical_value')
+		}
+		else {
+			preserve
+			use "`path_cluster'", clear
+				
+			local 0 `cluster_var'
+			syntax varlist
+			
+			marksample alluse
+			markout `alluse' `cluster_var', strok
+			
+			qui sum `cluster_var'
+			local num_sector_obs = r(N)
+			
+			** translate sector data into matrix
+			tempname sec_vec_full sec_vec_unique
+			
+			mata: s_readsec_iv("`cluster_var'", "`alluse'")
+			mat `sec_vec_full' = r(sec_vec)
+			
+			** get unique values of `cluster_var'
+			qui duplicates drop `cluster_var', force
+			mata: s_readsec_iv("`cluster_var'", "`alluse'")
+			mat `sec_vec_unique' = r(sec_vec)
+			
+			** Compute SE
+			mata: s_AKM0_cluster_iv("`e_null'", "`ln'", "`Xdd'", "`Xddd'", "`Ydd'", "`Gdd'", `coef', `fs_coef', `beta0', `critical_value', "`sec_vec_full'", "`sec_vec_unique'")
+			
+			restore
+		}
+		
+		** Display results
+		display " "
+		display "The estimated coefficient is " %5.4f `coef'
+		display "Inference"
+		display "               Std. Error   p-value   Lower CI   Upper CI"
+		display "Homoscedastic     " %5.4f `SE_homo'  "    " %5.4f `p_homo' "    " %5.4f `CI_low_homo' "    " %5.4f `CI_upp_homo' 
+		display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r'
+		
+		if `r(CItype)' == 1 {
+			display "AKM0              " %5.4f `r(se)'  "    " %5.4f `r(p)' "    " %5.4f `r(CIl)' "    " %5.4f `r(CIu)'
+		}
+		else if `r(CItype)' == 2 {
+			display "Inference"
+			display "               Std. Error   p-value   CI"
+			display "AKM0              " %5.4f `r(se)'  "    " %5.4f `r(p)' "    " "=(-Inf, " %5.4f `r(CIl)' "] + [" %5.4f `r(CIu)' " , Inf)"
+		}
+		else {
+			display "Inference"
+			display "               Std. Error   p-value   CI"
+			display "AKM0              " %5.4f `r(se)'  "    " %5.4f `r(p)' "    " "=(-Inf, Inf)"
+		}
 	}
-	else {
-		ereturn local se = `SE_AKM'
-	}
-
-	ereturn local CI_upp = `CI_upp'
-	ereturn local CI_low = `CI_low'
-	ereturn scalar p = `p'
-	ereturn scalar tstat = `tstat'
+	
+	** Save results for return
+	ereturn scalar b = `coef'
+	ereturn local se = `r(se)'
+	ereturn local CI_upp = `r(CIu)'
+	ereturn local CI_low = `r(CIl)'
+	ereturn scalar p = `r(p)'
+	ereturn scalar tstat = `r(tstat)'
 	
 	if `firststage' != 0 {
 		ereturn local se_firststage = `se_firststage'
@@ -442,5 +349,531 @@ program define ivreg_ss, eclass
 		ereturn local p_firststage = `p_firststage'
 		ereturn scalar tstat = `tstat_firststage'
 	}
-	*/
+	
 end
+
+*******************************************************************************
+*************************** BEGIN MATA CODE ***********************************
+*******************************************************************************
+
+version 14.0
+set matastrict on
+
+mata:
+
+void s_AKM1_consvec_iv(string scalar IV_var,
+					   string scalar regressor_var, 
+					   string scalar share_varlist, 
+					   string scalar dependant_var,
+					   string scalar touse)
+{
+	real matrix Mn
+	real matrix Gn
+	real matrix ln
+	real colvector tildeYn
+	real matrix P1
+	real matrix P2
+	real matrix P3
+	real matrix hat_theta
+	real matrix hat_beta
+	real scalar coef
+	real matrix tildeZn
+	real matrix tildeXn
+	real matrix A
+	real matrix Xdd
+	real matrix Xddd
+	real matrix Ydd
+	real matrix Gdd
+	real matrix e_ln
+	
+	// Generate Matrix of Regressors, shares, and outcome variable
+	//Mn: Matrix of IVs
+	//Gn: Matrix of regressors
+	//ln: Matrix of Shares
+	//tildeYn: Vector of Dependent Variable
+	
+	st_view(Mn=., ., tokens(IV_var), touse) 	
+	st_view(Gn=., ., tokens(regressor_var), touse) 	
+	st_view(ln=., ., tokens(share_varlist), touse) 		
+	st_view(tildeYn=., ., tokens(dependant_var), touse) 
+	
+	P1 = Mn' * Gn
+	P2 = invsym(Mn' * Mn)
+	P3 = Mn' * tildeYn
+	hat_theta = invsym(P1' * P2 * P1) * (P1' * P2 * P3)
+
+	e = tildeYn - Gn*hat_theta
+	hat_beta = hat_theta[1, 1]
+
+	tildeZn = Mn[|1,2\.,.|]
+	tildeXn = Mn[|1,1\.,1|]
+	
+	A = tildeZn * invsym(tildeZn' * tildeZn)
+	Xdd = tildeXn - A * (tildeZn' * tildeXn)
+	Ydd = tildeYn - A * (tildeZn' * tildeYn)
+	Gdd = Gn[|1,1\.,1|] - A * (tildeZn' * Gn[|1,1\.,1|])
+	Xddd = invsym(ln' *ln) * (ln' * Xdd)
+	
+	// First stage coefficient
+	hat_thetaFS = invsym(Mn' * Mn) * (Mn' * Gdd)
+	hatpi = hat_thetaFS[1,1]
+	
+	// convert from view to matrix that can be returned
+	ln_q   = ln[|.,.\.,.|]
+	Xdd_q  = Xdd[|.,.\.,.|]
+	Xddd_q = Xddd[|.,.\.,.|]
+	e_q    = e[|.,.\.,.|]
+	
+	st_matrix("r(ln)", ln_q)
+	st_matrix("r(Xdd)", Xdd_q)
+	st_matrix("r(Xddd)", Xddd_q)
+	st_matrix("r(e)", e_q)
+	st_numscalar("r(b)", hat_beta)
+	st_numscalar("r(fs_b)", hatpi)
+}	
+
+void s_AKM0_consvec_iv(string scalar IV_var,
+					   string scalar regressor_var, 
+					   string scalar share_varlist, 
+					   string scalar dependant_var,
+					   string scalar touse,
+					   scalar beta0)
+{
+	real matrix Mn
+	real matrix Gn
+	real matrix ln
+	real colvector tildeYn
+	real matrix P1
+	real matrix P2
+	real matrix P3
+	real matrix hat_theta
+	real matrix hat_beta
+	real scalar coef
+	real matrix tildeZn
+	real matrix tildeXn
+	real matrix A
+	real matrix Xdd
+	real matrix Xddd
+	real matrix Ydd
+	real matrix Gdd
+	real matrix e_ln
+	real matrix e_null
+	
+	//Generate Matrix of Regressors, shares, and outcome variable
+	//Mn: Matrix of IVs
+	//Gn: Matrix of regressors
+	//ln: Matrix of Shares
+	//tildeYn: Vector of Dependent Variable
+	
+	st_view(Mn=., ., tokens(IV_var), touse) 	
+	st_view(Gn=., ., tokens(regressor_var), touse) 	
+	st_view(ln=., ., tokens(share_varlist), touse) 		
+	st_view(tildeYn=., ., tokens(dependant_var), touse) 
+	
+	P1 = Mn' * Gn
+	P2 = invsym(Mn' * Mn)
+	P3 = Mn' * tildeYn
+	hat_theta = invsym(P1' * P2 * P1) * (P1' * P2 * P3)
+
+	e = tildeYn - Gn*hat_theta
+	
+	hat_beta = hat_theta[1, 1]
+
+	tildeZn = Mn[|1,2\.,.|]
+	tildeXn = Mn[|1,1\.,1|]
+	
+	A = tildeZn * invsym(tildeZn' * tildeZn)
+	Xdd = tildeXn - A * (tildeZn' * tildeXn)
+	Ydd = tildeYn - A * (tildeZn' * tildeYn)
+	Gdd = Gn[|1,1\.,1|] - A * (tildeZn' * Gn[|1,1\.,1|])
+	Xddd = invsym(ln' *ln) * (ln' * Xdd)
+	e_null = Ydd - Gdd * beta0
+	
+	// First stage coefficient
+	hat_thetaFS = invsym(Mn' * Mn) * (Mn' * Gdd)
+	hatpi = hat_thetaFS[1,1]
+	
+	// convert from view to matrix that can be returned
+	ln_q   = ln[|.,.\.,.|]
+	Xdd_q  = Xdd[|.,.\.,.|]
+	Xddd_q = Xddd[|.,.\.,.|]
+	e_q    = e[|.,.\.,.|]
+	Gdd_q  = Gdd[|.,.\.,.|]
+	Ydd_q  = Ydd[|.,.\.,.|]
+	e_null_q = e_null[|.,.\.,.|]
+	
+	st_matrix("r(ln)", ln_q)
+	st_matrix("r(Xdd)", Xdd_q)
+	st_matrix("r(Xddd)", Xddd_q)
+	st_matrix("r(e)", e_q)
+	st_matrix("r(Ydd)", Ydd_q)
+	st_matrix("r(Gdd)", Gdd_q)
+	st_matrix("r(e_null)", e_null_q)
+	st_numscalar("r(b)", hat_beta)
+	st_numscalar("r(fs_b)", hatpi)
+}	
+
+
+
+void s_readsec_iv(string scalar cluster_var, string scalar touse) 
+{
+	real matrix sec_vec
+	
+	st_view(sec_vec=., ., tokens(cluster_var), touse)
+	
+	sec_vec_q = sec_vec[|.,.\.,.|]
+	
+	st_matrix("r(sec_vec)", sec_vec_q)
+}
+
+void s_AKM1_nocluster_iv(string scalar e_matrix,	 
+					  string scalar ln_matrix,   
+					  string scalar Xdd_matrix,  
+					  string scalar Xddd_matrix, 
+					  scalar coef, 	
+					  scalar fs_coef,
+					  scalar critical_value)
+{	
+	real matrix e
+	real matrix ln
+	real matrix Xdd
+	real matrix Xddd
+
+	// Read in data
+	e    = st_matrix(e_matrix)
+	ln   = st_matrix(ln_matrix)
+	Xdd  = st_matrix(Xdd_matrix)
+	Xddd = st_matrix(Xddd_matrix)
+	
+	// Compute variance matrix
+	R = (e' * ln) :* (e' * ln)
+	LambdaAKM = R * (Xddd :* Xddd)
+	
+	variance = (1/fs_coef^2) * invsym(Xdd' * Xdd) * LambdaAKM * invsym(Xdd' * Xdd)
+		
+	//AKM se, p-value, and t-stat
+	se_AKM = sqrt(variance[1,1])
+	tstat = coef / se_AKM
+	p_value = 2 * (1 - normal(abs(tstat)))
+	
+	CIl = coef - critical_value * se_AKM
+	CIu = coef + critical_value * se_AKM
+	
+	st_numscalar("r(se)", se_AKM)
+	st_numscalar("r(tstat)", tstat)
+	st_numscalar("r(p)", p_value)
+	st_numscalar("r(CIl)", CIl)
+	st_numscalar("r(CIu)", CIu)
+}
+
+void s_AKM0_nocluster_iv(string scalar e_null_matrix,	 
+					  string scalar ln_matrix,   
+					  string scalar Xdd_matrix,  
+					  string scalar Xddd_matrix, 
+					  string scalar Ydd_matrix,
+					  string scalar Gdd_matrix,
+					  scalar coef, 		
+					  scalar fs_coef,
+					  scalar beta0,
+					  scalar critical_value)
+{	
+	real matrix e_null
+	real matrix ln
+	real matrix Xdd
+	real matrix Xddd
+	real matrix Ydd
+	real matrix Gdd
+	real scalar critical2
+	real scalar RY
+	real scalar RX
+	real matrix lnY
+	real matrix lnX
+	real scalar SXY
+	real scalar SXX
+	real scalar SYY
+	real scalar Q
+	real scalar Delta
+	real scalar CIu
+	real scalar CIl
+	
+	// Read in data
+	e_null  = st_matrix(e_null_matrix)
+	ln   	= st_matrix(ln_matrix)
+	Xdd  	= st_matrix(Xdd_matrix)
+	Xddd 	= st_matrix(Xddd_matrix)
+	Ydd  	= st_matrix(Ydd_matrix)
+	Gdd  	= st_matrix(Gdd_matrix)
+	
+	// Compute variance matrix
+	R = (e_null' * ln) :* (e_null' * ln)
+	LambdaAKM = R * (Xddd :* Xddd)
+	
+	variance = (1/fs_coef^2) * invsym(Xdd' * Xdd) * LambdaAKM * invsym(Xdd' * Xdd)
+	
+	se_AKMnull = sqrt(variance[1,1])
+	tstat = (coef - beta0) / se_AKMnull
+	
+	p_value = 2 * (1 - normal(abs(tstat)))
+	
+	// Compute confidence interval
+	critical2 = critical_value^2
+    RY = Xdd' * Ydd
+    RX = Xdd' * Gdd
+	
+	lnY =  Ydd' * ln 
+    lnX =  Gdd' * ln
+	
+	XX = Xddd :* Xddd
+    SXY = (lnY :* lnX) * XX
+    SXX = (lnX :* lnX) * XX
+    SYY = (lnY :* lnY) * XX
+	
+	Q = (RX^2)  /critical2 - SXX
+    Delta = (RY * RX - critical2 * SXY)^2 - (RX^2 - critical2 * SXX)*(RY^2 - critical2 * SYY)
+	
+	if (Q > 0) {
+			CIl = ( (RY*RX - critical2*SXY) - Delta^(1/2) )/(RX^2 - critical2 * SXX)
+			CIu = ( (RY*RX - critical2*SXY) + Delta^(1/2) )/(RX^2 - critical2 * SXX)
+			CItype = 1
+		}
+	else {
+		if (Delta > 0) {
+			CIl = ( (RY*RX - critical2*SXY) + Delta^(1/2) )/(RX^2 - critical2 * SXX)
+			CIu = ( (RY*RX - critical2*SXY) - Delta^(1/2) )/(RX^2 - critical2 * SXX)
+			CItype = 2
+		}
+		else {
+			CIl = -10000000
+			CIu = 10000000
+			CItype = 3
+		}
+	}
+	
+	SE_AKM0 = (CIu - CIl)/(2 * critical_value)
+		
+	st_numscalar("r(se)", SE_AKM0)
+	st_numscalar("r(tstat)", tstat)
+	st_numscalar("r(p)", p_value)
+	st_numscalar("r(CIl)", CIl)
+	st_numscalar("r(CIu)", CIu)
+	st_numscalar("r(CItype)", CItype)
+}
+
+void s_AKM1_cluster_iv(string scalar e_matrix,	 			
+					string scalar ln_matrix,   			
+					string scalar Xdd_matrix,  			
+					string scalar Xddd_matrix, 			
+					scalar beta0, 						
+					scalar critical_value, 				
+					string scalar sec_vec_full_matrix, 	
+					string scalar sec_vec_unique_matrix, 
+					scalar coef,
+					scalar fs_coef
+					)
+{	
+	real matrix e
+	real matrix ln
+	real matrix Xdd
+	real matrix Xddd
+	real matrix sec_vec_full
+	real matrix sec_vec_unique
+	real scalar LambdaAKM
+	real matrix RXcluster
+	real matrix lncluster
+	
+	// Read in data
+	e    = st_matrix(e_matrix)
+	ln   = st_matrix(ln_matrix)
+	Xdd  = st_matrix(Xdd_matrix)
+	Xddd = st_matrix(Xddd_matrix)
+	sec_vec_full = st_matrix(sec_vec_full_matrix)
+	sec_vec_unique = st_matrix(sec_vec_unique_matrix)
+	
+	// Compute variance matrix
+	LambdaAKM  = 0
+	
+	startcol = 1
+	endcol = 1
+	
+	nrow_full = rows(sec_vec_full)
+	nrow_unique = rows(sec_vec_unique)
+	norder = 1
+	
+	for (i = 1; i <= nrow_unique; i++) {
+		sector = sec_vec_unique[i, 1]
+		
+		flag = 0
+		
+		for (j = 1; j <= nrow_full; j++) {
+			if (sec_vec_full[j, 1] == sector) {
+				if (flag == 0) {
+					select_vec = (j)
+					flag = 1
+				}
+				else {
+					select_vec = (select_vec \ j)
+				}
+			}
+		}
+		
+		lnCluster = ln[. , select_vec]
+		XdddCluster = Xddd[select_vec, .]		
+		RXCluster = (( e'*lnCluster  )') :* XdddCluster
+		
+		LambdaAKM  = LambdaAKM  + sum(RXCluster * RXCluster')
+	}
+	
+	variance = (1/fs_coef^2) * invsym(Xdd' * Xdd) * LambdaAKM * invsym(Xdd' * Xdd)
+	
+	//AKM se, p-value, and t-stat
+	se_AKM = sqrt(variance[1,1])
+	tstat = (coef - beta0) / se_AKM
+	
+	p_value = 2 * (1 - normal(abs(tstat)))
+	
+	CIl = coef - critical_value * se_AKM
+	CIu = coef + critical_value * se_AKM
+	
+	st_numscalar("r(se)", se_AKM)
+	st_numscalar("r(tstat)", tstat)
+	st_numscalar("r(p)", p_value)
+	st_numscalar("r(CIl)", CIl)
+	st_numscalar("r(CIu)", CIu)
+}
+
+void s_AKM0_cluster_iv(string scalar e_null_matrix,	 
+					   string scalar ln_matrix,   
+					   string scalar Xdd_matrix,  
+					   string scalar Xddd_matrix, 
+					   string scalar Ydd_matrix,
+					   string scalar Gdd_matrix,
+					   scalar coef, 		
+					   scalar fs_coef,
+					   scalar beta0,
+					   scalar critical_value,
+					   string scalar sec_vec_full_matrix, 	
+					   string scalar sec_vec_unique_matrix) 
+{	
+	real matrix e_null
+	real matrix ln
+	real matrix Xdd
+	real matrix Xddd
+	real matrix Ydd
+	real matrix sec_vec_full
+	real matrix sec_vec_unique
+	real scalar LambdaAKM
+	real scalar SYY
+	real scalar SXY
+	real scalar SXX
+	real matrix RXCluster
+	real matrix lnCluster
+	real matrix lnYCluster
+	real matrix lnXCluster
+	real scalar critical2
+	real scalar RY
+	real scalar RX
+	real matrix lnY
+	real matrix lnX
+	real scalar Q
+	real scalar Delta
+	real scalar CIu
+	real scalar CIl
+	
+	// Read in data
+	e_null = st_matrix(e_null_matrix)
+	ln     = st_matrix(ln_matrix)
+	Xdd    = st_matrix(Xdd_matrix)
+	Xddd   = st_matrix(Xddd_matrix)
+	Ydd    = st_matrix(Ydd_matrix)
+	Gdd    = st_matrix(Gdd_matrix)
+	sec_vec_full = st_matrix(sec_vec_full_matrix)
+	sec_vec_unique = st_matrix(sec_vec_unique_matrix)
+	
+	// Compute variance matrix
+	LambdaAKM  = 0
+	SYY = 0
+	SXY = 0
+	SXX = 0
+	
+	startcol = 1
+	endcol = 1
+	
+	nrow_full = rows(sec_vec_full)
+	nrow_unique = rows(sec_vec_unique)
+	norder = 1
+	
+	for (i = 1; i <= nrow_unique; i++) {
+		sector = sec_vec_unique[i, 1]
+		
+		flag = 0
+		
+		for (j = 1; j <= nrow_full; j++) {
+			if (sec_vec_full[j, 1] == sector) {
+				if (flag == 0) {
+					select_vec = (j)
+					flag = 1
+				}
+				else {
+					select_vec = (select_vec \ j)
+				}
+			}
+		}
+		
+		lnCluster = ln[. , select_vec]
+		XdddCluster = Xddd[select_vec, .]
+		
+		RXCluster = (( e_null'*lnCluster  )') :* XdddCluster
+		lnYCluster = (( Ydd'*lnCluster  )') :* XdddCluster
+        lnXCluster = (( Gdd'*lnCluster  )') :* XdddCluster
+		
+		LambdaAKM  = LambdaAKM  + sum(RXCluster * RXCluster')
+		SXY = SXY + sum(lnYCluster * lnXCluster')
+        SXX = SXX + sum(lnXCluster * lnXCluster')
+        SYY = SYY + sum(lnYCluster * lnYCluster')
+	}
+	
+	variance = (1/fs_coef^2) * invsym(Xdd' * Xdd) * LambdaAKM * invsym(Xdd' * Xdd)
+	
+	// AKM se, p-value, and t-stat
+	se_AKM = sqrt(variance[1,1])
+	tstat = (coef - beta0) / se_AKM
+	
+	p_value = 2 * (1 - normal(abs(tstat)))
+	
+	// Compute confidence interval
+	critical2 = critical_value^2
+    RY = Xdd' * Ydd
+    RX = Xdd' * Gdd
+	
+	Q = (RX^2)  /critical2 - SXX
+    Delta = (RY * RX - critical2 * SXY)^2 - (RX^2 - critical2 * SXX)*(RY^2 - critical2 * SYY)
+	
+	if (Q > 0) {
+			CIl = ( (RY*RX - critical2*SXY) - Delta^(1/2) )/(RX^2 - critical2 * SXX)
+			CIu = ( (RY*RX - critical2*SXY) + Delta^(1/2) )/(RX^2 - critical2 * SXX)
+			CItype = 1
+		}
+	else {
+		if (Delta > 0) {
+			CIl = ( (RY*RX - critical2*SXY) + Delta^(1/2) )/(RX^2 - critical2 * SXX)
+			CIu = ( (RY*RX - critical2*SXY) - Delta^(1/2) )/(RX^2 - critical2 * SXX)
+			CItype = 2
+		}
+		else {
+			CIl = -10000000
+			CIu = 10000000
+			CItype = 3
+		}
+	}
+	
+	SE_AKM0 = (CIu - CIl)/(2 * critical_value)
+		
+	st_numscalar("r(se)", SE_AKM0)
+	st_numscalar("r(tstat)", tstat)
+	st_numscalar("r(p)", p_value)
+	st_numscalar("r(CIl)", CIl)
+	st_numscalar("r(CIu)", CIu)
+	st_numscalar("r(CItype)", CItype)
+}
+
+end		// end mata section

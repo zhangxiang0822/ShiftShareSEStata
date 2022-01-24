@@ -78,7 +78,7 @@ prog main
 	timer off 7
 	timer list 7
 
-	* (4) AKM0, no cluster
+	* (4) AKM0, cluster
 	timer on 8
 	use "data/ADH_derived.dta", clear
 	ivreg_ss d_sh_empl_mfg, endogenous_var(d_tradeusch_pw) shiftshare_iv(d_tradeotch_pw_lag) ///
