@@ -94,8 +94,7 @@ program define reg_ss, eclass
 	_rmcoll `share_varlist', force
 	local num_omit_var = `r(k_omitted)'
 	if `num_omit_var' > 0 {
-		display "Error: You have collinear share variables (Share matrix has colinear columns)"
-		exit
+		display "Warning: You have collinear share variables (Share matrix has colinear columns). We"
 	}
 	 
 	** Generate Matrix of Regressors, shares, and outcome variable
@@ -172,7 +171,7 @@ program define reg_ss, eclass
 		display "               Std. Error   p-value   Lower CI   Upper CI"
 		display "Homoscedastic     " %5.4f `SE_homo'  "    " %5.4f `p_homo' "    " %5.4f `CI_low_homo' "    " %5.4f `CI_upp_homo' 
 		display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r'
-		display "AKM0              " %5.4f `r(se)'  "    " %5.4f `r(p)' "    " %5.4f `r(CIl)' "    " %5.4f `r(CIu)'
+		display "AKM               " %5.4f `r(se)'  "    " %5.4f `r(p)' "    " %5.4f `r(CIl)' "    " %5.4f `r(CIu)'
 			
 	}
 	
@@ -281,7 +280,6 @@ version 14.0
 set matastrict on
 
 mata:
-
 void s_AKM1_consvec(string scalar regressor_var, 
 					string scalar share_varlist, 
 					string scalar dependant_var,
@@ -401,8 +399,8 @@ void s_AKM0_consvec(string scalar regressor_var,
 	st_matrix("r(e_ln)", e_ln_q)
 	st_matrix("r(e_null)", e_null_q)
 	st_numscalar("r(b)", coef)
-}					  
-
+}	
+				  
 void s_readsec(string scalar cluster_var, string scalar touse) 
 {
 	real matrix sec_vec
@@ -425,7 +423,6 @@ void s_AKM1_nocluster(string scalar e_matrix,
 	real matrix ln
 	real matrix Xdd
 	real matrix Xddd
-
 	// Read in data
 	e    = st_matrix(e_matrix)
 	ln   = st_matrix(ln_matrix)
@@ -540,7 +537,6 @@ void s_AKM0_nocluster(string scalar e_null_matrix,
 	st_numscalar("r(CIu)", CIu)
 	st_numscalar("r(CItype)", CItype)
 }
-
 void s_AKM1_cluster(string scalar e_matrix,	 			
 					string scalar ln_matrix,   			
 					string scalar Xdd_matrix,  			
@@ -621,7 +617,6 @@ void s_AKM1_cluster(string scalar e_matrix,
 	st_numscalar("r(CIl)", CIl)
 	st_numscalar("r(CIu)", CIu)
 }
-
 void s_AKM0_cluster(string scalar e_null_matrix,	 			
 					string scalar ln_matrix,   			
 					string scalar Xdd_matrix,  			
@@ -754,8 +749,4 @@ void s_AKM0_cluster(string scalar e_null_matrix,
 	st_numscalar("r(CIu)", CIu)
 	st_numscalar("r(CItype)", CItype)
 }
-
 end		// end mata section
-
-
-

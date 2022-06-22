@@ -158,8 +158,7 @@ program define ivreg_ss, eclass
 	local num_omit_var = `r(k_omitted)'
 	
 	if `num_omit_var' > 0 {
-		display "Error: You have collinear share variables (Share matrix has colinear columns)"
-		exit
+		display "Warning: You have collinear share variables (Share matrix has colinear columns)"
 	}
 	
 	** Generate Matrix of Regressors, shares, and outcome variable
@@ -243,7 +242,7 @@ program define ivreg_ss, eclass
 		display "               Std. Error   p-value   Lower CI   Upper CI"
 		display "Homoscedastic     " %5.4f `SE_homo'  "    " %5.4f `p_homo' "    " %5.4f `CI_low_homo' "    " %5.4f `CI_upp_homo' 
 		display "EHW               " %5.4f `SE_r'     "    " %5.4f `p_r' "    " %5.4f `CI_low_r' "    " %5.4f `CI_upp_r'
-		display "AKM0              " %5.4f `r(se)'  "    " %5.4f `r(p)' "    " %5.4f `r(CIl)' "    " %5.4f `r(CIu)'
+		display "AKM               " %5.4f `r(se)'  "    " %5.4f `r(p)' "    " %5.4f `r(CIl)' "    " %5.4f `r(CIu)'
 	}
 	
 	** Estimate AKM0 standard error

@@ -14,7 +14,7 @@ prog main
 	* (1) AKM, no cluster
 	timer on 1
 	use "data/ADH_derived.dta", clear
-	append using "data/ADH_derived.dta"
+	
 	reg_ss d_sh_empl_mfg, shiftshare_var(d_tradeotch_pw_lag) ///
 			 control_varlist(t2 l_shind_manuf_cbp reg_encen reg_escen reg_midatl reg_mount reg_pacif reg_satl reg_wncen reg_wscen l_sh_popedu_c l_sh_popfborn l_sh_empl_f l_sh_routine33 l_task_outsource) ///
 		     share_varlist(emp_share1-emp_share770) weight_var(weight) alpha(0.05)
