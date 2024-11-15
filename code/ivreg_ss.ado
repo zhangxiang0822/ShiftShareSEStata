@@ -158,7 +158,7 @@ program define ivreg_ss, eclass
 	local num_omit_var = `r(k_omitted)'
 	
 	if `num_omit_var' > 0 {
-		display "Warning: You have collinear share variables (Share matrix has colinear columns)"
+		display "Warning: The share matrix has collinear columns. Collinear sectoral shocks have been dropped"
 	}
 	
 	** Generate Matrix of Regressors, shares, and outcome variable
